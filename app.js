@@ -7,6 +7,8 @@ const positionBadgeClasses = {
     FWD: 'bg-danger text-white'
 };
 
+const API_BASE_URL = 'https://olamn-fpl-scout.vercel.app';
+
 function getPositionBadge(position) {
     const badgeClass = positionBadgeClasses[position] || 'bg-secondary text-white';
     return `<span class="badge ${badgeClass}">${position}</span>`;
@@ -53,7 +55,7 @@ window.onload = async () => {
 // --- DATA FETCHING ---
 async function initializeScout() {
     try {
-        const response = await fetch('/api/players');
+        const response = await fetch(`${API_BASE_URL}/api/players`);
         if (!response.ok) throw new Error('Backend API not available');
         const data = await response.json();
 
@@ -122,7 +124,7 @@ async function loadPredictionWidgets() {
     if (!container || !captainContainer) return;
 
     try {
-        const response = await fetch('/api/predictions');
+        const response = await fetch(`${API_BASE_URL}/api/predictions`);
         if (!response.ok) throw new Error('Prediction endpoint failed');
         const data = await response.json();
         const liveStatus = data.summary?.liveMode ? 'Live data from FPL API' : 'Local fallback mode';
@@ -196,7 +198,7 @@ async function loadLiveHealthBadge() {
     if (!badge) return;
 
     try {
-        const response = await fetch('/api/health');
+        const response = await fetch(`${API_BASE_URL}/api/health`);
         if (!response.ok) {
             throw new Error('Health API did not respond');
         }
@@ -218,7 +220,7 @@ async function loadRecommendedPage() {
     if (!container) return;
 
     try {
-        const response = await fetch('/api/predictions');
+        const response = await fetch(`${API_BASE_URL}/api/predictions`);
         if (!response.ok) throw new Error('Prediction endpoint failed');
         const data = await response.json();
 
