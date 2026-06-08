@@ -7,9 +7,24 @@ const positionBadgeClasses = {
     FWD: 'bg-danger text-white'
 };
 
-const API_BASE_URL = 'https://olamn-fpl-scout.vercel.app';
+const API_BASE_URL = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
+    ? 'http://127.0.0.1:3000'
+    : 'https://olamn-fpl-scout.vercel.app';
 const MANAGER_STORAGE_KEY = 'fplManagerId';
+const PLAYER_IMAGE_FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%23e9ecef'/%3E%3Ccircle cx='20' cy='14' r='8' fill='%23909ca3'/%3E%3Cpath d='M11 30c1.5-6 7.5-8 9-8s7.5 2 9 8' fill='none' stroke='%23909ca3' stroke-width='2'/%3E%3C/svg%3E";
 let managerSyncActive = false;
+
+// Global error handler to capture script/resource causing SyntaxError
+window.addEventListener('error', (e) => {
+    try {
+        console.error('Global error captured:', e.message, 'source:', e.filename || e.target?.src || '(inline)', 'lineno:', e.lineno, 'col:', e.colno);
+    } catch (err) {
+        console.error('Error logging failed', err);
+    }
+});
+window.addEventListener('unhandledrejection', (e) => {
+    try { console.error('Unhandled promise rejection:', e.reason); } catch (err) { console.error(err); }
+});
 
 function getPositionBadge(position) {
     const badgeClass = positionBadgeClasses[position] || 'bg-secondary text-white';
@@ -26,6 +41,48 @@ function saveManagerId(id) {
 
 function clearManagerId() {
     localStorage.removeItem(MANAGER_STORAGE_KEY);
+}
+
+let photoDebugLogged = false;
+
+function getPlayerPhotoUrl(player) {
+    if (!player) return null;
+    if (player.photoUrl) return player.photoUrl;
+
+    const sourcePhoto = player.photo || player.opta_code;
+    if (!sourcePhoto) {
+        if (!photoDebugLogged) {
+            console.warn('Player missing photo source:', player);
+            photoDebugLogged = true;
+        }
+        return null;
+    }
+
+    const sourceString = String(sourcePhoto).trim();
+    if (!sourceString) {
+        if (!photoDebugLogged) {
+            console.warn('Player has empty photo source:', player);
+            photoDebugLogged = true;
+        }
+        return null;
+    }
+
+    // Already a full URL
+    if (/^https?:\/\//i.test(sourceString)) {
+        return sourceString;
+    }
+
+    // Normalize IDs like "154561.jpg", "p154561.jpg", "154561", "p154561"
+    let photoId = sourceString.replace(/^p/i, '').replace(/\.(jpg|png)$/i, '');
+    if (!/^[0-9]+$/.test(photoId)) {
+        if (!photoDebugLogged) {
+            console.warn('Player photo source could not be normalized:', player);
+            photoDebugLogged = true;
+        }
+        return null;
+    }
+
+    return `https://resources.premierleague.com/premierleague/photos/players/110x140/p${photoId}.png`;
 }
 
 function showManagerSyncMessage(message, isError = false) {
@@ -222,9 +279,12 @@ async function loadPredictionWidgets() {
             </div>
         ` + data.bestTransfers.map(player => `
             <div class="d-flex justify-content-between align-items-center border-bottom p-2">
-                <div>
-                    <div class="fw-semibold">${player.name}</div>
-                    <small class="text-muted">${player.team} · ${player.pos}</small>
+                <div class="d-flex align-items-center">
+                    <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
+                    <div>
+                        <div class="fw-semibold">${player.name}</div>
+                        <small class="text-muted">${player.team} · ${player.pos}</small>
+                    </div>
                 </div>
                 <div class="text-end">
                     <div class="badge bg-primary">${player.predictedPoints} xP</div>
@@ -236,6 +296,7 @@ async function loadPredictionWidgets() {
         captainContainer.innerHTML = data.captainPicks.map(player => `
             <div class="col-md-4">
                 <div class="card bg-dark text-white p-3 text-center">
+                    <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;object-position:center top;margin-bottom:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
                     <h6 class="mb-1">${player.name}</h6>
                     <small class="d-block mb-2 text-white-50">${player.team} · ${player.pos}</small>
                     <span class="badge bg-warning text-dark">${player.captainScore}</span>
@@ -255,9 +316,12 @@ async function loadPredictionWidgets() {
                 </div>
             ` + fallback.bestTransfers.map(player => `
                 <div class="d-flex justify-content-between align-items-center border-bottom p-2">
-                    <div>
-                        <div class="fw-semibold">${player.name}</div>
-                        <small class="text-muted">${player.team} · ${player.pos}</small>
+                    <div class="d-flex align-items-center">
+                        <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
+                        <div>
+                            <div class="fw-semibold">${player.name}</div>
+                            <small class="text-muted">${player.team} · ${player.pos}</small>
+                        </div>
                     </div>
                     <div class="text-end">
                         <div class="badge bg-primary">${player.predictedPoints} xP</div>
@@ -269,6 +333,7 @@ async function loadPredictionWidgets() {
             captainContainer.innerHTML = fallback.captainPicks.map(player => `
                 <div class="col-md-4">
                     <div class="card bg-dark text-white p-3 text-center">
+                        <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;object-position:center top;margin-bottom:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'"
                         <h6 class="mb-1">${player.name}</h6>
                         <small class="d-block mb-2 text-white-50">${player.team} · ${player.pos}</small>
                         <span class="badge bg-warning text-dark">${player.captainScore.toFixed(1)}</span>
@@ -314,9 +379,12 @@ function renderManagerRecommendations(managerData) {
                 <h6 class="mb-2">Transfer suggestions</h6>
                 ${transfers.length ? transfers.map(player => `
                     <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-                        <div>
-                            <strong>${player.name}</strong><br>
-                            <small class="text-muted">${player.team} · ${player.pos}</small>
+                        <div class="d-flex align-items-center">
+                            <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
+                            <div>
+                                <strong>${player.name}</strong><br>
+                                <small class="text-muted">${player.team} · ${player.pos}</small>
+                            </div>
                         </div>
                         <div class="text-end">
                             <div class="badge bg-primary">${player.predictedPoints} xP</div>
@@ -328,9 +396,12 @@ function renderManagerRecommendations(managerData) {
                 <h6 class="mb-2">Players to consider selling</h6>
                 ${sells.length ? sells.map(player => `
                     <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-                        <div>
-                            <strong>${player.name}</strong><br>
-                            <small class="text-muted">${player.team} · ${player.pos}</small>
+                        <div class="d-flex align-items-center">
+                                <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
+                            <div>
+                                <strong>${player.name}</strong><br>
+                                <small class="text-muted">${player.team} · ${player.pos}</small>
+                            </div>
                         </div>
                         <div class="text-end">
                             <div class="badge bg-secondary">${player.predictedPoints} xP</div>
@@ -344,6 +415,7 @@ function renderManagerRecommendations(managerData) {
         captainContainer.innerHTML = captainPicks.length ? captainPicks.map(player => `
             <div class="col-md-4">
                 <div class="card bg-dark text-white p-3 text-center">
+                    <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;object-position:center top;margin-bottom:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
                     <h6 class="mb-1">${player.name}</h6>
                     <small class="d-block mb-2 text-white-50">${player.team} · ${player.pos}</small>
                     <span class="badge bg-warning text-dark">${player.captainScore}</span>
@@ -398,9 +470,12 @@ async function loadRecommendedPage() {
                         <h5>Top Transfer Picks</h5>
                         ${data.bestTransfers.map(player => `
                             <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-                                <div>
-                                    <strong>${player.name}</strong><br>
-                                    <small class="text-muted">${player.team} · ${player.pos}</small>
+                                <div class="d-flex align-items-center">
+                                    <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
+                                    <div>
+                                        <strong>${player.name}</strong><br>
+                                        <small class="text-muted">${player.team} · ${player.pos}</small>
+                                    </div>
                                 </div>
                                 <div class="text-end">
                                     <div class="badge bg-primary">${player.predictedPoints} xP</div>
@@ -415,9 +490,12 @@ async function loadRecommendedPage() {
                         <h5>Captain Shortlist</h5>
                         ${data.captainPicks.map(player => `
                             <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-                                <div>
-                                    <strong>${player.name}</strong><br>
-                                    <small class="text-muted">${player.team} · ${player.pos}</small>
+                                <div class="d-flex align-items-center">
+                                    <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
+                                    <div>
+                                        <strong>${player.name}</strong><br>
+                                        <small class="text-muted">${player.team} · ${player.pos}</small>
+                                    </div>
                                 </div>
                                 <div class="text-end">
                                     <span class="badge bg-warning text-dark">${player.captainScore}</span>
@@ -455,6 +533,7 @@ async function loadFallbackPredictions() {
             pos: positionsMap[p.element_type] || 'N/A',
             team: teamsMap[p.team] || 'Unknown',
             price: (p.now_cost / 10).toFixed(1),
+            photo: p.photo,
             predictedPoints: parseFloat(p.ep_next) || parseFloat(p.ep_this) || 0,
             captainScore: (parseFloat(p.ep_next) || parseFloat(p.ep_this) || 0) * 1.05,
             nextFixture: p.ep_next ? `${p.ep_next} xP` : 'TBD'
@@ -487,9 +566,12 @@ function renderRecommendationFallback(container, data, message) {
                     <h5>Top Transfer Picks</h5>
                     ${data.bestTransfers.map(player => `
                         <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-                            <div>
-                                <strong>${player.name}</strong><br>
-                                <small class="text-muted">${player.team} · ${player.pos}</small>
+                            <div class="d-flex align-items-center">
+                                <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
+                                <div>
+                                    <strong>${player.name}</strong><br>
+                                    <small class="text-muted">${player.team} · ${player.pos}</small>
+                                </div>
                             </div>
                             <div class="text-end">
                                 <div class="badge bg-primary">${player.predictedPoints} xP</div>
@@ -504,9 +586,12 @@ function renderRecommendationFallback(container, data, message) {
                     <h5>Captain Shortlist</h5>
                     ${data.captainPicks.map(player => `
                         <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-                            <div>
-                                <strong>${player.name}</strong><br>
-                                <small class="text-muted">${player.team} · ${player.pos}</small>
+                            <div class="d-flex align-items-center">
+                                <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
+                                <div>
+                                    <strong>${player.name}</strong><br>
+                                    <small class="text-muted">${player.team} · ${player.pos}</small>
+                                </div>
                             </div>
                             <div class="text-end">
                                 <span class="badge bg-warning text-dark">${player.captainScore.toFixed(1)}</span>
@@ -678,17 +763,17 @@ async function updateGameweekTitle() {
     // Delay the fetch by 3 seconds
     setTimeout(async () => {
         try {
-            const response = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/');
+            const response = await fetch(`${API_BASE_URL}/api/predictions`);
             const data = await response.json();
-            const currentEvent = data.events.find(e => e.is_current === true);
-            const nextEvent = data.events.find(e => e.is_next === true) || data.events.find(e => e.id === ((currentEvent?.id || 0) + 1));
+            const currentEvent = data.summary?.currentEvent || null;
+            const nextEvent = data.summary?.nextEvent || null;
 
             let displayText = 'Predictions for the next gameweek';
             if (nextEvent) {
-                const currentId = currentEvent ? currentEvent.id : Math.max(0, nextEvent.id - 1);
-                displayText = `Predictions for Gameweek ${nextEvent.id} · Data updated to GW ${currentId}`;
+                const currentId = currentEvent || Math.max(0, nextEvent - 1);
+                displayText = `Predictions for Gameweek ${nextEvent} · Data updated to GW ${currentId}`;
             } else if (currentEvent) {
-                displayText = `Predictions for Gameweek ${currentEvent.id} · Data updated to current GW`;
+                displayText = `Predictions for Gameweek ${currentEvent} · Data updated to current GW`;
             }
 
             if (titleElement) titleElement.innerText = displayText;
@@ -797,8 +882,13 @@ function renderWatchlist() {
         container.innerHTML = watchlist.map(player => `
             <tr>
                 <td>
-                    <strong>${player.name}</strong><br>
-                    <small class="text-muted">${player.pos || ''} | ${player.team || ''}</small>
+                    <div class="d-flex align-items-center">
+                        <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
+                        <div>
+                            <strong>${player.name}</strong><br>
+                            <small class="text-muted">${player.pos || ''} | ${player.team || ''}</small>
+                        </div>
+                    </div>
                 </td>
                 <td>£${player.price}</td>
                 <td>${player.form}</td>
@@ -831,4 +921,39 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    // Log player image sources shortly after initial render to aid debugging
+    setTimeout(() => {
+        try { logPlayerImageSources(); } catch (e) { console.warn('logPlayerImageSources failed:', e); }
+    }, 4000);
 });
+
+// Debug helper: log img.src values for likely player image elements
+function logPlayerImageSources() {
+    try {
+        const selectors = [
+            '#recommendation-container img',
+            '#captain-container img',
+            '#player-table-body img',
+            '#watchlist-table-body img',
+            '.card img'
+        ];
+        const imgs = Array.from(document.querySelectorAll(selectors.join(',')));
+        if (!imgs.length) {
+            console.info('LogPlayerImages: no player images found yet');
+            return;
+        }
+        console.group('Player image sources');
+        imgs.forEach(img => {
+            const srcAttr = img.getAttribute('src');
+            const src = img.src || srcAttr;
+            if (srcAttr !== src) {
+                console.info(`img alt="${img.alt || ''}" -> attribute=${srcAttr} final=${src}`);
+            } else {
+                console.info(`img alt="${img.alt || ''}" -> ${src}`);
+            }
+        });
+        console.groupEnd();
+    } catch (err) {
+        console.warn('logPlayerImageSources error', err);
+    }
+}

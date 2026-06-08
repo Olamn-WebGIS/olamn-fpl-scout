@@ -721,6 +721,12 @@ function normalizePlayer(player, teamMap, fixtureInfo = null) {
     ? `${player.ep_this} xP ${opponentLabel}`.trim()
     : opponentLabel || 'TBD';
 
+  const photoSource = player.photo || player.opta_code || player.id || '';
+  const photoId = String(photoSource).replace(/^p/i, '').replace(/\.(jpg|png)$/i, '');
+  const photoUrl = /^[0-9]+$/.test(photoId)
+    ? `https://resources.premierleague.com/premierleague/photos/players/110x140/p${photoId}.png`
+    : null;
+
   return {
     id: player.id,
     name: player.web_name || `${player.first_name || ''} ${player.second_name || ''}`.trim(),
@@ -729,6 +735,7 @@ function normalizePlayer(player, teamMap, fixtureInfo = null) {
     pos: positionsMap[player.element_type] || 'N/A',
     team: teamMap[player.team] || 'Unknown',
     team_id: player.team,
+    photoUrl,
     pts: safeNumber(player.total_points),
     total_points: safeNumber(player.total_points),
     price,
@@ -760,7 +767,7 @@ function normalizePlayer(player, teamMap, fixtureInfo = null) {
   };
 }
 
-function buildPredictions(players, liveMode = false) {
+function buildPredictions(players, liveMode = false, eventInfo = {}) {
   const sortedByPrediction = [...players].sort((a, b) => b.predictedPoints - a.predictedPoints);
   const sortedByCaptain = [...players].sort((a, b) => b.captainScore - a.captainScore);
 
@@ -773,7 +780,8 @@ function buildPredictions(players, liveMode = false) {
     predictedPoints: p.predictedPoints,
     nextFixture: p.nextFixture,
     status: p.status,
-    news: p.news
+    news: p.news,
+    photoUrl: p.photoUrl
   }));
 
   const captainPicks = sortedByCaptain.slice(0, 5).map(p => ({
@@ -783,7 +791,8 @@ function buildPredictions(players, liveMode = false) {
     pos: p.pos,
     captainScore: p.captainScore,
     predictedPoints: p.predictedPoints,
-    nextFixture: p.nextFixture
+    nextFixture: p.nextFixture,
+    photoUrl: p.photoUrl
   }));
 
   const bestByPosition = ['GKP', 'DEF', 'MID', 'FWD'].reduce((acc, pos) => {
@@ -799,7 +808,9 @@ function buildPredictions(players, liveMode = false) {
       playerCount: players.length,
       topTransfer: bestTransfers[0] || null,
       topCaptain: captainPicks[0] || null,
-      liveMode
+      liveMode,
+      currentEvent: eventInfo.currentEvent || null,
+      nextEvent: eventInfo.nextEvent || null
     }
   };
 }
@@ -955,7 +966,8 @@ app.get('/api/manager/:managerId', async (req, res) => {
     const picksData = await picksResponse.json();
     const managerSquad = buildManagerSquad(picksData, playersById);
 
-    const predictions = buildPredictions(players, liveCache.liveMode);
+    const nextEvent = sourceData.events.find(e => e.is_next === true)?.id || sourceData.events.find(e => e.id === ((currentEvent || 0) + 1))?.id || null;
+    const predictions = buildPredictions(players, liveCache.liveMode, { currentEvent, nextEvent });
     const managerRecommendations = buildManagerRecommendations(managerSquad, predictions);
     const chipAdvice = computeChipAdvice(remainingChips, managerSquad, predictions);
 
@@ -1023,7 +1035,9 @@ app.get('/api/predictions', async (req, res) => {
       const fixtureInfo = fixtures ? getNextFixtureForTeam(fixtures, player.team) : null;
       return normalizePlayer(player, teamMap, fixtureInfo);
     });
-    res.json(buildPredictions(players, liveCache.liveMode));
+    const currentEvent = sourceData.current_event || sourceData.events.find(e => e.is_current === true)?.id || null;
+    const nextEvent = sourceData.events.find(e => e.is_next === true)?.id || sourceData.events.find(e => e.id === ((currentEvent || 0) + 1))?.id || null;
+    res.json(buildPredictions(players, liveCache.liveMode, { currentEvent, nextEvent }));
   } catch (error) {
     console.error('API /api/predictions error:', error);
     res.status(500).json({ message: 'Unable to compute predictions' });

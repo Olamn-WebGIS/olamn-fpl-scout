@@ -7,8 +7,7 @@
     <title>FPL Scout - Gameweek Predictions</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-        <link rel="stylesheet" href="https://api-sports.io">
-    <script type="module" src="https://api-sports.io"></script>
+        
 
     <style>
         :root {
@@ -317,6 +316,44 @@
     </style>
 </head>
 <body>
+
+    <!-- Defensive: remove malformed/empty script tags that would load the page HTML as JS (live-reload/workers) -->
+    <script>
+        (function(){
+            function isBadScript(el){
+                if(!el || el.tagName !== 'SCRIPT') return false;
+                const src = el.getAttribute('src');
+                if(!src) return true; // empty src loads current document
+                try{
+                    const u = new URL(src, location.href);
+                    return u.href === location.href || u.origin === location.origin && (u.pathname === '/' || u.pathname === '');
+                }catch(e){
+                    return false;
+                }
+            }
+            // remove existing bad scripts
+            Array.from(document.getElementsByTagName('script')).forEach(s => {
+                if(isBadScript(s)) {
+                    s.type = 'javascript/blocked';
+                    s.parentNode && s.parentNode.removeChild(s);
+                    console.info('Removed bad script tag to avoid parsing HTML as JS:', s);
+                }
+            });
+            // watch for newly injected scripts (live-reload etc.)
+            const mo = new MutationObserver(muts => {
+                muts.forEach(m => {
+                    m.addedNodes && m.addedNodes.forEach(n => {
+                        if(n.tagName === 'SCRIPT' && isBadScript(n)) {
+                            n.type = 'javascript/blocked';
+                            n.parentNode && n.parentNode.removeChild(n);
+                            console.info('Blocked newly injected bad script', n);
+                        }
+                    });
+                });
+            });
+            mo.observe(document.documentElement || document, { childList: true, subtree: true });
+        })();
+    </script>
 
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
         <div class="container-fluid">
