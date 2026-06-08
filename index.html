@@ -376,6 +376,7 @@
                 </div>
 
                 <h4 class="fw-bold mb-3 mt-4" style="color: var(--fpl-dark-blue);">Top Captain Choices</h4>
+                <div class="small text-muted mb-2" id="gameweek-title-captain" style="font-weight: 500;">Loading gameweek info...</div>
                 <div class="row g-3 mb-4" id="captain-container">
                     <!-- Captain Cards kept as per original -->
                     <div class="col-md-4"><div class="card bg-dark text-white p-3">Erling Haaland</div></div>
@@ -386,9 +387,31 @@
 
             <!-- RIGHT COLUMN -->
             <div class="col-lg-4">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3">Sync Your FPL Manager</h5>
+                        <p class="text-muted small mb-3">Enter your FPL manager ID to personalize team predictions, transfer advice, and chip timing.</p>
+                        <div class="input-group mb-3">
+                            <input id="manager-id-input" type="text" class="form-control" placeholder="Enter manager ID" aria-label="FPL Manager ID">
+                            <button id="manager-sync-button" class="btn btn-primary" type="button">Sync</button>
+                        </div>
+                        <div id="manager-sync-message" class="small text-danger"></div>
+                    </div>
+                </div>
+                <div id="manager-profile-card" class="card border-0 shadow-sm mb-4 d-none">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-2">Synced FPL Manager</h5>
+                        <p class="mb-1"><strong>Team:</strong> <span id="manager-team-name">-</span></p>
+                        <p class="mb-1"><strong>Manager:</strong> <span id="manager-profile-name">-</span></p>
+                        <p class="mb-0 small text-muted" id="manager-chip-summary">-</p>
+                    </div>
+                </div>
                 <div class="card border-0 shadow-sm">
-                   <div class="card-header bg-success text-white">
-                    <h5 class="fw-bold my-0">Top Targets to Sign</h5>
+                   <div class="card-header bg-success text-white d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 class="fw-bold my-0">Top Targets to Sign</h5>
+                        <div id="gameweek-title" class="small mt-2" style="color: #fff; font-weight: 500; line-height: 1.4;">Loading gameweek info...</div>
+                    </div>
                 </div>
                 <div class="card-body" id="recommendation-container"></div>
                 

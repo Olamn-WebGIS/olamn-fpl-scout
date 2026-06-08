@@ -8,10 +8,82 @@ const positionBadgeClasses = {
 };
 
 const API_BASE_URL = 'https://olamn-fpl-scout.vercel.app';
+const MANAGER_STORAGE_KEY = 'fplManagerId';
+let managerSyncActive = false;
 
 function getPositionBadge(position) {
     const badgeClass = positionBadgeClasses[position] || 'bg-secondary text-white';
     return `<span class="badge ${badgeClass}">${position}</span>`;
+}
+
+function getSavedManagerId() {
+    return localStorage.getItem(MANAGER_STORAGE_KEY) || '';
+}
+
+function saveManagerId(id) {
+    localStorage.setItem(MANAGER_STORAGE_KEY, id);
+}
+
+function clearManagerId() {
+    localStorage.removeItem(MANAGER_STORAGE_KEY);
+}
+
+function showManagerSyncMessage(message, isError = false) {
+    const messageElement = document.getElementById('manager-sync-message');
+    if (!messageElement) return;
+    messageElement.textContent = message;
+    messageElement.className = isError ? 'small text-danger' : 'small text-success';
+}
+
+function renderManagerProfile(managerData) {
+    const profileCard = document.getElementById('manager-profile-card');
+    const teamName = document.getElementById('manager-team-name');
+    const managerName = document.getElementById('manager-profile-name');
+    const chipSummary = document.getElementById('manager-chip-summary');
+    if (!profileCard || !teamName || !managerName || !chipSummary) return;
+
+    profileCard.classList.remove('d-none');
+    teamName.textContent = managerData.managerProfile.team_name || managerData.managerProfile.teamName || 'Unknown team';
+    managerName.textContent = managerData.managerProfile.name || `${managerData.managerProfile.player_first_name || ''} ${managerData.managerProfile.player_last_name || ''}`.trim() || 'FPL manager';
+    chipSummary.textContent = managerData.managerProfile.remainingChips.length
+        ? `Unused chips: ${managerData.managerProfile.remainingChips.join(', ')}`
+        : 'No chips remaining';
+}
+
+function setupManagerSyncHandlers() {
+    const input = document.getElementById('manager-id-input');
+    const button = document.getElementById('manager-sync-button');
+    if (!button || !input) return;
+
+    button.addEventListener('click', async () => {
+        const managerId = input.value.trim();
+        if (!managerId) {
+            showManagerSyncMessage('Enter your FPL manager ID first.', true);
+            return;
+        }
+        try {
+            await handleManagerSync(managerId);
+        } catch (error) {
+            console.error('Manager sync failed:', error);
+        }
+    });
+}
+
+async function handleManagerSync(managerId) {
+    try {
+        const managerData = await loadManagerData(managerId);
+        managerSyncActive = true;
+        saveManagerId(managerId);
+        showManagerSyncMessage('Manager synced successfully.', false);
+        renderManagerProfile(managerData);
+        renderManagerRecommendations(managerData);
+        return managerData;
+    } catch (error) {
+        managerSyncActive = false;
+        showManagerSyncMessage(`Unable to sync manager: ${error.message}`, true);
+        loadPredictionWidgets();
+        throw error;
+    }
 }
 
 let allPlayers = [];
@@ -27,9 +99,19 @@ const pageSize = 10;
 // --- STARTUP ---
 window.onload = async () => {
     updateGameweekTitle();
+    const savedManagerId = getSavedManagerId();
+
     // 1. If on Home Page
     if (document.getElementById("player-table-body")) {
         await initializeScout();
+        setupManagerSyncHandlers();
+        if (savedManagerId) {
+            const managerInput = document.getElementById('manager-id-input');
+            if (managerInput) managerInput.value = savedManagerId;
+            await handleManagerSync(savedManagerId);
+        } else {
+            loadPredictionWidgets();
+        }
         document.getElementById('player-search')?.addEventListener('input', () => {
             currentPage = 1;
             renderPage();
@@ -76,10 +158,8 @@ async function initializeScout() {
             selected_by_percent: p.selected_by_percent || p.selectedByPercent || 0
         }));
 
-        updateRecommendations(allPlayers);
-        updateCaptainPicks(allPlayers);
+        // Render player table and load health badge; prediction widgets are loaded separately.
         renderPage();
-        loadPredictionWidgets();
         await loadLiveHealthBadge();
     } catch (error) {
         console.warn('Backend API unavailable — falling back to local JSON.', error);
@@ -107,8 +187,7 @@ async function initializeScout() {
                 captainScore: (parseFloat(p.ep_next) || parseFloat(p.ep_this) || 0) * 1.05
             }));
 
-            updateRecommendations(allPlayers);
-            updateCaptainPicks(allPlayers);
+            // Render player table and load health badge; prediction widgets are loaded separately.
             renderPage();
             await loadLiveHealthBadge();
         } catch (fallbackError) {
@@ -130,6 +209,7 @@ async function loadPredictionWidgets() {
         const liveStatus = data.summary?.liveMode ? 'Live data from FPL API' : 'Local fallback mode';
         const statusBadge = data.summary?.liveMode ? 'bg-success' : 'bg-secondary';
 
+        setTimeout(() => {
         container.innerHTML = `
             <div class="mb-3">
                 <span class="badge ${statusBadge}">${liveStatus}</span>
@@ -156,10 +236,12 @@ async function loadPredictionWidgets() {
                 </div>
             </div>
         `).join('');
+        }, 3000);
     } catch (error) {
         console.warn('Could not render prediction widgets:', error);
         const fallback = await loadFallbackPredictions();
         if (fallback) {
+            setTimeout(() => {
             container.innerHTML = `
                 <div class="mb-3">
                     <span class="badge bg-secondary">Fallback local data</span>
@@ -187,10 +269,82 @@ async function loadPredictionWidgets() {
                     </div>
                 </div>
             `).join('');
+            }, 3000);
             return;
         }
+        setTimeout(() => {
         container.innerHTML = `<div class="text-muted">Predictions are unavailable right now.</div>`;
+        }, 3000);
     }
+}
+
+async function loadManagerData(managerId) {
+    const response = await fetch(`${API_BASE_URL}/api/manager/${managerId}`);
+    if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(errorBody || 'Unable to load manager data');
+    }
+    return response.json();
+}
+
+function renderManagerRecommendations(managerData) {
+    const container = document.getElementById('recommendation-container');
+    const captainContainer = document.getElementById('captain-container');
+    if (!container || !captainContainer || !managerData?.managerRecommendations) return;
+
+    const recommendations = managerData.managerRecommendations;
+    const transfers = recommendations.suggestedTransfers || [];
+    const sells = recommendations.suggestedSells || [];
+    const captainPicks = recommendations.captainPicks || [];
+    const chipAdvice = recommendations.chipAdvice || {};
+
+    setTimeout(() => {
+        container.innerHTML = `
+            <div class="mb-3">
+                <span class="badge bg-success">FPL manager sync active</span>
+                <p class="small text-muted mt-2">Personalized transfer and chip advice for your squad.</p>
+            </div>
+            <div class="card bg-light border-0 mb-3 p-3">
+                <h6 class="mb-2">Transfer suggestions</h6>
+                ${transfers.length ? transfers.map(player => `
+                    <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                        <div>
+                            <strong>${player.name}</strong><br>
+                            <small class="text-muted">${player.team} · ${player.pos}</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="badge bg-primary">${player.predictedPoints} xP</div>
+                        </div>
+                    </div>
+                `).join('') : '<div class="text-muted small">No new transfers recommended at this time.</div>'}
+            </div>
+            <div class="card bg-light border-0 p-3">
+                <h6 class="mb-2">Players to consider selling</h6>
+                ${sells.length ? sells.map(player => `
+                    <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                        <div>
+                            <strong>${player.name}</strong><br>
+                            <small class="text-muted">${player.team} · ${player.pos}</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="badge bg-secondary">${player.predictedPoints} xP</div>
+                        </div>
+                    </div>
+                `).join('') : '<div class="text-muted small">Your current squad is aligned with the top predictions.</div>'}
+            </div>
+            ${chipAdvice.summary ? `<div class="alert alert-info mt-3 py-2">${chipAdvice.summary}</div>` : ''}
+        `;
+
+        captainContainer.innerHTML = captainPicks.length ? captainPicks.map(player => `
+            <div class="col-md-4">
+                <div class="card bg-dark text-white p-3 text-center">
+                    <h6 class="mb-1">${player.name}</h6>
+                    <small class="d-block mb-2 text-white-50">${player.team} · ${player.pos}</small>
+                    <span class="badge bg-warning text-dark">${player.captainScore}</span>
+                </div>
+            </div>
+        `).join('') : '<div class="text-muted">No captain recommendations available yet.</div>';
+    }, 3000);
 }
 
 async function loadLiveHealthBadge() {
@@ -227,6 +381,7 @@ async function loadRecommendedPage() {
         const statusBadge = data.summary?.liveMode ? 'bg-success' : 'bg-secondary';
         const healthText = data.summary?.liveMode ? 'Live data from FPL API' : 'Fallback local data';
 
+        setTimeout(() => {
         container.innerHTML = `
             <div class="mb-4">
                 <span class="badge ${statusBadge}">${healthText}</span>
@@ -267,6 +422,7 @@ async function loadRecommendedPage() {
                 </div>
             </div>
         `;
+        }, 3000);
     } catch (error) {
         console.warn('Could not load recommended page:', error);
         const fallback = await loadFallbackPredictions();
@@ -508,22 +664,37 @@ function renderStatsPage() {
 }
 async function updateGameweekTitle() {
     const titleElement = document.getElementById("gameweek-title");
+    const captainTitleElement = document.getElementById("gameweek-title-captain");
     
-    // 1. Safety check: If the element doesn't exist, stop immediately
-    if (!titleElement) return;
+    // 1. Safety check: If no elements exist, stop immediately
+    if (!titleElement && !captainTitleElement) return;
 
-    try {
-        const response = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/');
-        const data = await response.json();
-        const currentEvent = data.events.find(e => e.is_current === true);
-        const gwNumber = currentEvent ? currentEvent.id : "Latest";
-        
-        titleElement.innerText = `Gameweek ${gwNumber} Predictions`;
-    } catch (error) {
-        // 2. Handle the error gracefully without stopping the script
-        console.warn("FPL API error (this is okay):", error);
-        titleElement.innerText = "Predictions"; 
-    }
+    // Delay the fetch by 3 seconds
+    setTimeout(async () => {
+        try {
+            const response = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/');
+            const data = await response.json();
+            const currentEvent = data.events.find(e => e.is_current === true);
+            const nextEvent = data.events.find(e => e.is_next === true) || data.events.find(e => e.id === ((currentEvent?.id || 0) + 1));
+
+            let displayText = 'Predictions for the next gameweek';
+            if (nextEvent) {
+                const currentId = currentEvent ? currentEvent.id : Math.max(0, nextEvent.id - 1);
+                displayText = `Predictions for Gameweek ${nextEvent.id} · Data updated to GW ${currentId}`;
+            } else if (currentEvent) {
+                displayText = `Predictions for Gameweek ${currentEvent.id} · Data updated to current GW`;
+            }
+
+            if (titleElement) titleElement.innerText = displayText;
+            if (captainTitleElement) captainTitleElement.innerText = displayText;
+        } catch (error) {
+            // 2. Handle the error gracefully without stopping the script
+            console.warn("FPL API error (this is okay):", error);
+            const fallbackText = "Predictions for the next gameweek";
+            if (titleElement) titleElement.innerText = fallbackText;
+            if (captainTitleElement) captainTitleElement.innerText = fallbackText;
+        }
+    }, 3000);
 }
 function getBestTransfers(allPlayers) {
     // 1. Sort by form and potential (simple example)
