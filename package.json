@@ -1,0 +1,13 @@
+{
+  "name": "olamn-fpl-scout",
+  "version": "1.0.0",
+  "description": "FPL Scout prediction dashboard with backend API scaffolding for live player data.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

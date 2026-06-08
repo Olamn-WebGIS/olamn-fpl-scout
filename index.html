@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPL Scout - Gameweek Predictions</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://api-sports.io">
+    <script type="module" src="https://api-sports.io"></script>
+
+    <style>
+        :root {
+            --bg: #eef4fb;
+            --surface: #ffffff;
+            --surface-soft: #f8fbff;
+            --text: #0f1f35;
+            --muted: #6f8294;
+            --primary: #0d6efd;
+            --primary-muted: rgba(13, 110, 253, 0.12);
+            --border: rgba(15, 76, 129, 0.12);
+            --shadow: 0 18px 45px rgba(15, 76, 129, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at top left, rgba(13, 110, 253, 0.14), transparent 28%), var(--bg);
+            color: var(--text);
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            letter-spacing: 0.01em;
+        }
+
+        .navbar-custom {
+            background: linear-gradient(180deg, #0b2346 0%, #0f315f 100%);
+            padding: 0.9rem 1.25rem;
+            box-shadow: 0 10px 24px rgba(15, 76, 129, 0.16);
+        }
+
+        .navbar-brand {
+            font-size: 1.15rem;
+            letter-spacing: 0.05em;
+        }
+
+        .navbar-nav .nav-link {
+            color: rgba(255, 255, 255, 0.78);
+            transition: color 0.2s ease;
+        }
+
+        .navbar-nav .nav-link:hover,
+        .navbar-nav .nav-link.active {
+            color: #ffffff !important;
+        }
+
+        .card,
+        .table-responsive,
+        .btn,
+        .badge,
+        .form-control,
+        .table th,
+        .table td {
+            transition: all 0.25s ease;
+        }
+
+        .card {
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            border-radius: 24px;
+            background: var(--surface);
+            box-shadow: var(--shadow);
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 55px rgba(15, 76, 129, 0.14);
+        }
+
+        .card-header,
+        .card-footer {
+            background: transparent;
+            border: none;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .btn {
+            border-radius: 999px;
+            font-weight: 600;
+            box-shadow: 0 14px 30px rgba(13, 110, 253, 0.08);
+        }
+
+        .btn-primary,
+        .btn-primary:hover,
+        .btn-primary:focus {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .btn-outline-secondary {
+            border-color: rgba(15, 76, 129, 0.16);
+            color: var(--text);
+            background: rgba(255,255,255,0.9);
+        }
+
+        .btn-outline-secondary:hover {
+            background: var(--surface-soft);
+        }
+
+        .form-control {
+            border-radius: 14px;
+            border: 1px solid rgba(15, 76, 129, 0.12);
+            background: #ffffff;
+            box-shadow: inset 0 1px 2px rgba(15, 76, 129, 0.04);
+        }
+
+        .table {
+            border-collapse: separate;
+            border-spacing: 0 0.35rem;
+            background: transparent;
+        }
+
+        .table thead th {
+            border: none;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 0.75rem;
+            padding-left: 1.4rem;
+        }
+
+        .table tbody tr {
+            background: #f8fbff;
+            border: 1px solid rgba(15, 76, 129, 0.06);
+            border-radius: 18px;
+        }
+
+        .table td,
+        .table th {
+            border: none;
+            vertical-align: middle;
+            padding: 1rem 1.25rem;
+        }
+
+        .team-cell {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+            flex-wrap: nowrap;
+        }
+
+        .team-prefix {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #6c757d;
+        }
+
+        .standings-table-responsive {
+            overflow-x: auto !important;
+        }
+
+        .standings-table-responsive table {
+            width: auto;
+            min-width: 760px;
+        }
+
+        @media (min-width: 768px) {
+            .standings-table-responsive table {
+                min-width: 760px;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .standings-table-responsive {
+                overflow-x: auto !important;
+            }
+            .standings-table-responsive table {
+                width: 100%;
+                min-width: unset;
+            }
+            .team-cell {
+                flex-wrap: wrap;
+                white-space: normal;
+            }
+        }
+
+        .badge {
+            border-radius: 999px;
+            font-size: 0.75rem;
+            letter-spacing: 0.02em;
+        }
+
+        .badge.bg-primary {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .badge.bg-secondary {
+            background: #5f6d84;
+            color: #fff;
+        }
+
+        .active-star {
+            color: #ffc107 !important;
+            border-color: #ffc107 !important;
+            background: rgba(255, 193, 7, 0.15) !important;
+        }
+
+        .active-star .bi {
+            color: #ffc107 !important;
+        }
+
+        .fixture-card-link {
+            cursor: pointer;
+        }
+
+        .fixture-card-link .card {
+            overflow: hidden;
+        }
+
+        .fixture-card-link:hover .card {
+            transform: translateY(-5px);
+            box-shadow: 0 26px 60px rgba(15, 76, 129, 0.18);
+        }
+
+        .hero-banner,
+        .custom-tabs {
+            transition: all 0.3s ease;
+        }
+
+        .tab-content {
+            animation: fadeInUp 0.45s ease both;
+        }
+
+        .player-card,
+        .captain-card {
+            border-radius: 22px;
+            overflow: hidden;
+        }
+
+        .player-card:hover,
+        .captain-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .text-muted {
+            color: var(--muted) !important;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(18px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Mobile-specific fix */
+        @media (max-width: 767px) {
+            .navbar-custom {
+                padding: 0.75rem 1rem;
+            }
+
+            .nav-tabs {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .nav-tabs .nav-link {
+                padding: 6px 10px;
+                font-size: 0.85rem;
+                white-space: nowrap;
+            }
+
+            .card-body,
+            .table-responsive,
+            .table td,
+            .table th,
+            .form-control,
+            .btn-group {
+                min-width: 0 !important;
+            }
+
+            .btn-group {
+                flex-wrap: wrap;
+                gap: 0.35rem;
+            }
+
+            .form-control {
+                width: 100%;
+            }
+
+            .table thead th,
+            .table td,
+            .table th {
+                padding: 0.75rem 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold text-success" href="#">FPL Scout</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link active" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="recommended.html">Recommendations</a></li>
+                    <li class="nav-item"><a class="nav-link" href="watchlist.html">Watchlist</a></li>
+                </ul>
+                <span class="badge bg-secondary ms-3 mt-2 mt-lg-0" id="live-health-badge">Loading...</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container" style="margin-top: 50px;">
+        <div class="row">
+            <!-- LEFT COLUMN -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-0 pt-4 pb-2 d-flex flex-wrap justify-content-between align-items-center gap-3">
+                        <h4 class="fw-bold my-0" style="color: var(--fpl-dark-blue);">Player Predictions</h4>
+                        <div class="d-flex gap-2">
+                            <input type="text" id="player-search" class="form-control form-control-sm" placeholder="Search name...">
+                       <div class="btn-group btn-group-sm" role="group">
+    <button class="btn btn-primary btn-filter" onclick="setFilter('ALL', event)">ALL</button>
+<button class="btn btn-outline-secondary btn-filter" onclick="setFilter('GKP', event)">GKP</button>
+<button class="btn btn-outline-secondary btn-filter" onclick="setFilter('DEF', event)">DEF</button>
+<button class="btn btn-outline-secondary btn-filter" onclick="setFilter('MID', event)">MID</button>
+<button class="btn btn-outline-secondary btn-filter" onclick="setFilter('FWD', event)">FWD</button>
+</div>
+                        </div>
+                    </div>
+                    <div class="table-responsive p-3">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light text-muted small uppercase">
+                                <tr>
+                                    <th scope="col">Player</th>
+                                    <th scope="col">Pos</th>
+                                    <th scope="col">Team</th>
+                                    <th scope="col">Pts</th>
+                                    <th scope="col" class="text-center"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="player-table-body"></tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer bg-white border-0 d-flex justify-content-between align-items-center">
+                        <button type="button" class="btn btn-sm btn-primary" onclick="changePage(-1)">Previous</button>
+                        <span id="page-info" class="fw-bold">Page 1</span>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="changePage(1)">Next</button>
+                    </div>
+                </div>
+
+                <h4 class="fw-bold mb-3 mt-4" style="color: var(--fpl-dark-blue);">Top Captain Choices</h4>
+                <div class="row g-3 mb-4" id="captain-container">
+                    <!-- Captain Cards kept as per original -->
+                    <div class="col-md-4"><div class="card bg-dark text-white p-3">Erling Haaland</div></div>
+                    <div class="col-md-4"><div class="card bg-dark text-white p-3">Son Heung-Min</div></div>
+                    <div class="col-md-4"><div class="card bg-dark text-white p-3">Bruno Fernandes</div></div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm">
+                   <div class="card-header bg-success text-white">
+                    <h5 class="fw-bold my-0">Top Targets to Sign</h5>
+                </div>
+                <div class="card-body" id="recommendation-container"></div>
+                
+                <!-- ... other widgets ... -->
+            </div>
+        </div>
+
+        <!-- ABOUT & CLIENT EXPLAINER SECTION -->
+<section class="row mt-5 pt-4 border-top">
+    <div class="col-12 text-center mb-5">
+        <h2 class="fw-bold" style="color: #0A2540;">Why Use FPL Scout?</h2>
+        <p class="text-muted max-width-600 mx-auto">
+            An advanced data analytics platform engineered to help Fantasy Premier League managers eliminate guesswork and make decisions driven by underlying statistics.
+        </p>
+    </div>
+    
+    <!-- Feature 1: Predictive Algorithm -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 border-0 shadow-sm p-4 text-center">
+            <div class="d-inline-flex align-items-center justify-content-center bg-success-subtle text-success rounded-circle mb-3 mx-auto" style="width: 60px; height: 60px;">
+                <i class="bi bi-graph-up-arrow fs-3"></i>
+            </div>
+            <h5 class="fw-bold" style="color: #0A2540;">Predictive Algorithm</h5>
+            <p class="small text-muted mb-0">We calculate upcoming gameweek points by dynamically weighting recent form, expected goal involvement (xG and xA), and historical match data against specific opponents.</p>
+        </div>
+    </div>
+
+    <!-- Feature 2: Advanced FDR -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 border-0 shadow-sm p-4 text-center">
+            <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-circle mb-3 mx-auto" style="width: 60px; height: 60px;">
+                <i class="bi bi-calendar3-event fs-3"></i>
+            </div>
+            <h5 class="fw-bold" style="color: #0A2540;">Advanced FDR Matrix</h5>
+            <p class="small text-muted mb-0">Standard fixture difficulty ratings change slowly. Our model adjusts instantly based on a team's defensive or offensive spikes, highlighting true clean sheet and goal probabilities.</p>
+        </div>
+    </div>
+
+    <!-- Feature 3: Personalized Watchlists -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 border-0 shadow-sm p-4 text-center">
+            <div class="d-inline-flex align-items-center justify-content-center bg-warning-subtle text-warning rounded-circle mb-3 mx-auto" style="width: 60px; height: 60px;">
+                <i class="bi bi-bookmark-star fs-3"></i>
+            </div>
+            <h5 class="fw-bold" style="color: #0A2540;">Personalized Watchlists</h5>
+            <p class="small text-muted mb-0">Save players to your profile to watch their market velocity and point predictions over multi-gameweek horizons before committing your valuable free transfers.</p>
+        </div>
+    </div>
+</section>
+    </main>
+
+    <script src="app.js" defer></script>
+    <div class="modal fade" id="playerModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="playerName">Player Name</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="playerDetails">
+        </div>
+    </div>
+  </div>
+</div>
+<footer class="bg-dark text-white py-4 mt-5">
+    <div class="container text-center">
+        <p>&copy; 2026 Olamn WebGIS. All rights reserved.</p>
+        <p>Built for Fantasy Premier League Managers.</p>
+    </div>
+</footer>
+<div class="modal fade" id="profileModal" tabindex="-1">...</div>
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reset Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Enter your email and we'll send you a link to reset your password.</p>
+                <input type="email" class="form-control mb-3" placeholder="Enter email">
+                <button class="btn btn-primary w-100" onclick="handleForgotPassword()">Send Reset Link</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
