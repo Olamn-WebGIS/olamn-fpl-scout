@@ -61,10 +61,16 @@ function setupManagerSyncHandlers() {
             showManagerSyncMessage('Enter your FPL manager ID first.', true);
             return;
         }
+        showManagerSyncMessage('Syncing manager data...', false);
+        button.disabled = true;
+        button.textContent = 'Syncing...';
         try {
             await handleManagerSync(managerId);
         } catch (error) {
             console.error('Manager sync failed:', error);
+        } finally {
+            button.disabled = false;
+            button.textContent = 'Sync';
         }
     });
 }
