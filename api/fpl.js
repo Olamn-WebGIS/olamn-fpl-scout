@@ -108,6 +108,8 @@ function normalizePlayer(player, teamMap, fixtureInfo = null) {
 
   return {
     id: player.id,
+    photo: player.photo,
+    opta_code: player.opta_code || player.code,
     name: player.web_name || `${player.first_name || ''} ${player.second_name || ''}`.trim(),
     first_name: player.first_name,
     second_name: player.second_name,

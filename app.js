@@ -49,8 +49,8 @@ function getPlayerPhotoUrl(player) {
     if (!player) return null;
     if (player.photoUrl) return player.photoUrl;
 
-    const sourcePhoto = player.photo || player.opta_code;
-    if (!sourcePhoto) {
+    const sourcePhoto = player.photo || player.opta_code || player.id || player.code;
+    if (!sourcePhoto && sourcePhoto !== 0) {
         if (!photoDebugLogged) {
             console.warn('Player missing photo source:', player);
             photoDebugLogged = true;
@@ -83,6 +83,36 @@ function getPlayerPhotoUrl(player) {
     }
 
     return `https://resources.premierleague.com/premierleague/photos/players/110x140/p${photoId}.png`;
+}
+
+function getPlayerPhotoSrc(player) {
+    const primary = getPlayerPhotoUrl(player);
+    if (primary) return primary;
+
+    const sourcePhoto = player.photo || player.opta_code || player.id || player.code;
+    if (!sourcePhoto && sourcePhoto !== 0) return PLAYER_IMAGE_FALLBACK;
+
+    const photoId = String(sourcePhoto).trim().replace(/^p/i, '').replace(/\.(jpg|png)$/i, '');
+    if (/^[0-9]+$/.test(photoId)) {
+        return `https://resources.premierleague.com/premierleague/photos/players/110x140/p${photoId}.png`;
+    }
+    return PLAYER_IMAGE_FALLBACK;
+}
+
+function handlePlayerImageError(img) {
+    if (!img) return;
+    const retryPhase = parseInt(img.dataset.retryPhase || '0', 10);
+    const source = img.dataset.photoSource || img.dataset.photoId || '';
+    const photoId = String(source).trim().replace(/^p/i, '').replace(/\.(jpg|png)$/i, '');
+
+    if (retryPhase === 0 && /^[0-9]+$/.test(photoId)) {
+        img.dataset.retryPhase = '1';
+        img.src = `https://resources.premierleague.com/premierleague/photos/players/250x250/p${photoId}.png`;
+        return;
+    }
+
+    img.onerror = null;
+    img.src = PLAYER_IMAGE_FALLBACK;
 }
 
 function showManagerSyncMessage(message, isError = false) {
@@ -233,7 +263,9 @@ async function initializeScout() {
             data.teams.forEach(t => teamsMap[t.id] = t.name);
 
             allPlayers = data.elements.map(p => ({
-                name: p.web_name,
+                id: p.id,
+                photo: p.photo,
+                opta_code: p.opta_code || p.code,
                 pos: positionsMap[p.element_type] || 'N/A',
                 team: teamsMap[p.team] || 'Unknown',
                 pts: p.total_points || 0,
@@ -280,7 +312,7 @@ async function loadPredictionWidgets() {
         ` + data.bestTransfers.map(player => `
             <div class="d-flex justify-content-between align-items-center border-bottom p-2">
                 <div class="d-flex align-items-center">
-                    <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
+                    <img src="${getPlayerPhotoSrc(player)}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" data-photo-source="${player.photo || player.opta_code || player.code || player.id || ''}" data-photo-id="${player.id || ''}" onerror="handlePlayerImageError(this)">
                     <div>
                         <div class="fw-semibold">${player.name}</div>
                         <small class="text-muted">${player.team} · ${player.pos}</small>
@@ -296,7 +328,7 @@ async function loadPredictionWidgets() {
         captainContainer.innerHTML = data.captainPicks.map(player => `
             <div class="col-md-4">
                 <div class="card bg-dark text-white p-3 text-center">
-                    <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;object-position:center top;margin-bottom:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
+                    <img src="${getPlayerPhotoSrc(player)}" alt="${player.name}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;object-position:center top;margin-bottom:10px;" data-photo-source="${player.photo || player.opta_code || player.code || player.id || ''}" data-photo-id="${player.id || ''}" onerror="handlePlayerImageError(this)">
                     <h6 class="mb-1">${player.name}</h6>
                     <small class="d-block mb-2 text-white-50">${player.team} · ${player.pos}</small>
                     <span class="badge bg-warning text-dark">${player.captainScore}</span>
@@ -317,7 +349,7 @@ async function loadPredictionWidgets() {
             ` + fallback.bestTransfers.map(player => `
                 <div class="d-flex justify-content-between align-items-center border-bottom p-2">
                     <div class="d-flex align-items-center">
-                        <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
+                        <img src="${getPlayerPhotoSrc(player)}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" data-photo-source="${player.photo || player.opta_code || player.code || player.id || ''}" data-photo-id="${player.id || ''}" onerror="handlePlayerImageError(this)">
                         <div>
                             <div class="fw-semibold">${player.name}</div>
                             <small class="text-muted">${player.team} · ${player.pos}</small>
@@ -333,7 +365,7 @@ async function loadPredictionWidgets() {
             captainContainer.innerHTML = fallback.captainPicks.map(player => `
                 <div class="col-md-4">
                     <div class="card bg-dark text-white p-3 text-center">
-                        <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;object-position:center top;margin-bottom:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'"
+                        <img src="${getPlayerPhotoSrc(player)}" alt="${player.name}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;object-position:center top;margin-bottom:10px;" data-photo-source="${player.photo || player.opta_code || player.code || player.id || ''}" data-photo-id="${player.id || ''}" onerror="handlePlayerImageError(this)">
                         <h6 class="mb-1">${player.name}</h6>
                         <small class="d-block mb-2 text-white-50">${player.team} · ${player.pos}</small>
                         <span class="badge bg-warning text-dark">${player.captainScore.toFixed(1)}</span>
@@ -380,7 +412,7 @@ function renderManagerRecommendations(managerData) {
                 ${transfers.length ? transfers.map(player => `
                     <div class="d-flex justify-content-between align-items-center border-bottom py-2">
                         <div class="d-flex align-items-center">
-                            <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
+                            <img src="${getPlayerPhotoSrc(player)}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" data-photo-source="${player.photo || player.opta_code || player.code || player.id || ''}" data-photo-id="${player.id || ''}" onerror="handlePlayerImageError(this)">
                             <div>
                                 <strong>${player.name}</strong><br>
                                 <small class="text-muted">${player.team} · ${player.pos}</small>
@@ -397,7 +429,7 @@ function renderManagerRecommendations(managerData) {
                 ${sells.length ? sells.map(player => `
                     <div class="d-flex justify-content-between align-items-center border-bottom py-2">
                         <div class="d-flex align-items-center">
-                                <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
+                                <img src="${getPlayerPhotoSrc(player)}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" data-photo-source="${player.photo || player.opta_code || player.code || player.id || ''}" data-photo-id="${player.id || ''}" onerror="handlePlayerImageError(this)">
                             <div>
                                 <strong>${player.name}</strong><br>
                                 <small class="text-muted">${player.team} · ${player.pos}</small>
@@ -415,7 +447,7 @@ function renderManagerRecommendations(managerData) {
         captainContainer.innerHTML = captainPicks.length ? captainPicks.map(player => `
             <div class="col-md-4">
                 <div class="card bg-dark text-white p-3 text-center">
-                    <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;object-position:center top;margin-bottom:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
+                    <img src="${getPlayerPhotoSrc(player)}" alt="${player.name}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;object-position:center top;margin-bottom:10px;" data-photo-source="${player.photo || player.opta_code || player.code || player.id || ''}" data-photo-id="${player.id || ''}" onerror="handlePlayerImageError(this)">
                     <h6 class="mb-1">${player.name}</h6>
                     <small class="d-block mb-2 text-white-50">${player.team} · ${player.pos}</small>
                     <span class="badge bg-warning text-dark">${player.captainScore}</span>
@@ -471,7 +503,7 @@ async function loadRecommendedPage() {
                         ${data.bestTransfers.map(player => `
                             <div class="d-flex justify-content-between align-items-center border-bottom py-2">
                                 <div class="d-flex align-items-center">
-                                    <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
+                                    <img src="${getPlayerPhotoSrc(player)}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" data-photo-source="${player.photo || player.opta_code || player.code || player.id || ''}" data-photo-id="${player.id || ''}" onerror="handlePlayerImageError(this)">
                                     <div>
                                         <strong>${player.name}</strong><br>
                                         <small class="text-muted">${player.team} · ${player.pos}</small>
@@ -491,7 +523,7 @@ async function loadRecommendedPage() {
                         ${data.captainPicks.map(player => `
                             <div class="d-flex justify-content-between align-items-center border-bottom py-2">
                                 <div class="d-flex align-items-center">
-                                    <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
+                                    <img src="${getPlayerPhotoSrc(player)}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" data-photo-source="${player.photo || player.opta_code || player.code || player.id || ''}" data-photo-id="${player.id || ''}" onerror="handlePlayerImageError(this)">
                                     <div>
                                         <strong>${player.name}</strong><br>
                                         <small class="text-muted">${player.team} · ${player.pos}</small>
@@ -567,7 +599,7 @@ function renderRecommendationFallback(container, data, message) {
                     ${data.bestTransfers.map(player => `
                         <div class="d-flex justify-content-between align-items-center border-bottom py-2">
                             <div class="d-flex align-items-center">
-                                <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
+                                <img src="${getPlayerPhotoSrc(player)}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" data-photo-source="${player.photo || player.opta_code || player.code || player.id || ''}" data-photo-id="${player.id || ''}" onerror="handlePlayerImageError(this)">
                                 <div>
                                     <strong>${player.name}</strong><br>
                                     <small class="text-muted">${player.team} · ${player.pos}</small>
@@ -587,7 +619,7 @@ function renderRecommendationFallback(container, data, message) {
                     ${data.captainPicks.map(player => `
                         <div class="d-flex justify-content-between align-items-center border-bottom py-2">
                             <div class="d-flex align-items-center">
-                                <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
+                                <img src="${getPlayerPhotoSrc(player)}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" data-photo-source="${player.photo || player.opta_code || player.code || player.id || ''}" data-photo-id="${player.id || ''}" onerror="handlePlayerImageError(this)">
                                 <div>
                                     <strong>${player.name}</strong><br>
                                     <small class="text-muted">${player.team} · ${player.pos}</small>
@@ -617,10 +649,16 @@ window.renderHomepage = (playersToRender) => {
         
         tbody.innerHTML += `<tr>
             <td>
-    <span onclick="showDetails('${p.name}')" style="cursor:pointer; color:#000; text-decoration:underline;">
-        <strong>${p.name}</strong>
-    </span>
-</td>
+                <div class="player-name-cell">
+                    <img src="${getPlayerPhotoSrc(p)}" alt="${p.name}" class="player-avatar"
+                        data-photo-source="${p.photo || p.opta_code || p.code || p.id || ''}"
+                        data-photo-id="${p.id || ''}"
+                        onerror="handlePlayerImageError(this)">
+                    <span onclick="showDetails('${p.name}')" style="cursor:pointer; color:#000; text-decoration:underline;">
+                        <strong>${p.name}</strong>
+                    </span>
+                </div>
+            </td>
             <td>${getPositionBadge(p.pos)}</td>
             <td>${p.team}</td>
             <td>${p.pts}</td>
@@ -883,7 +921,7 @@ function renderWatchlist() {
             <tr>
                 <td>
                     <div class="d-flex align-items-center">
-                        <img src="${getPlayerPhotoUrl(player) || PLAYER_IMAGE_FALLBACK}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" onerror="this.onerror=null;this.src='${PLAYER_IMAGE_FALLBACK}'">
+                        <img src="${getPlayerPhotoSrc(player)}" alt="${player.name}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center top;margin-right:10px;" data-photo-source="${player.photo || player.opta_code || player.code || player.id || ''}" data-photo-id="${player.id || ''}" onerror="handlePlayerImageError(this)">
                         <div>
                             <strong>${player.name}</strong><br>
                             <small class="text-muted">${player.pos || ''} | ${player.team || ''}</small>
