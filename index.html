@@ -2,9 +2,12 @@
 <html lang="en">
 <head>
     <script>
-      // ONLY redirect if the user is on the old github.io website
       if (window.location.hostname.includes("github.io")) {
-        window.location.replace("https://fplscout.name.ng" + window.location.pathname + window.location.search);
+        // If the path includes the github repository folder name, strip it out
+        let cleanPath = window.location.pathname.replace("/olamn-fpl-scout", "");
+        
+        // Redirect cleanly to the main Vercel custom domain setup
+        window.location.replace("https://fplscout.name.ng" + cleanPath + window.location.search);
       }
     </script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
