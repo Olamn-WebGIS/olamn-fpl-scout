@@ -169,19 +169,167 @@ function normalizePlayer(player, teamMap, fixtureInfo = null) {
   };
 }
 
-function buildPredictions(players) {
+function buildPredictions(players, liveMode = false, eventInfo = {}) {
   const sortedByPrediction = [...players].sort((a, b) => b.predictedPoints - a.predictedPoints);
   const sortedByCaptain = [...players].sort((a, b) => b.captainScore - a.captainScore);
 
+  const bestTransfers = sortedByPrediction.slice(0, 8).map(p => ({
+    id: p.id,
+    name: p.name,
+    pos: p.pos,
+    team: p.team,
+    price: p.price,
+    predictedPoints: p.predictedPoints,
+    nextFixture: p.nextFixture,
+    status: p.status,
+    news: p.news,
+    photoUrl: p.photoUrl,
+    photo: p.photo,
+    opta_code: p.opta_code
+  }));
+
+  const captainPicks = sortedByCaptain.slice(0, 5).map(p => ({
+    id: p.id,
+    name: p.name,
+    team: p.team,
+    pos: p.pos,
+    captainScore: p.captainScore,
+    predictedPoints: p.predictedPoints,
+    nextFixture: p.nextFixture,
+    photoUrl: p.photoUrl,
+    photo: p.photo,
+    opta_code: p.opta_code
+  }));
+
+  const bestByPosition = ['GKP', 'DEF', 'MID', 'FWD'].reduce((acc, pos) => {
+    acc[pos] = sortedByPrediction.filter(p => p.pos === pos).slice(0, 4);
+    return acc;
+  }, {});
+
   return {
-    bestTransfers: sortedByPrediction.slice(0, 8),
-    captainPicks: sortedByCaptain.slice(0, 5),
+    bestTransfers,
+    captainPicks,
+    bestByPosition,
     summary: {
       playerCount: players.length,
-      topTransfer: sortedByPrediction[0] || null,
-      topCaptain: sortedByCaptain[0] || null,
-      liveMode: liveCache.liveMode
+      topTransfer: bestTransfers[0] || null,
+      topCaptain: captainPicks[0] || null,
+      liveMode,
+      currentEvent: eventInfo.currentEvent || null,
+      nextEvent: eventInfo.nextEvent || null
     }
+  };
+}
+
+function getManagerChipUsage(historyData) {
+  const usedChips = new Set();
+  if (Array.isArray(historyData?.current)) {
+    historyData.current.forEach(event => {
+      if (event?.chip) usedChips.add(event.chip);
+    });
+  }
+  if (Array.isArray(historyData?.chips)) {
+    historyData.chips.forEach(chip => {
+      if (chip?.name) usedChips.add(chip.name);
+    });
+  }
+  return Array.from(usedChips);
+}
+
+function getRemainingChips(usedChips) {
+  const knownChips = ['wildcard', 'freehit', 'benchboost', '3xc'];
+  return knownChips.filter(chip => !usedChips.includes(chip));
+}
+
+function buildManagerSquad(picks, playersById) {
+  const squad = [];
+  const bench = [];
+  let captain = null;
+  let viceCaptain = null;
+  const activeChip = picks?.active_chip || null;
+
+  if (!Array.isArray(picks?.picks)) {
+    return { squad, bench, captain, viceCaptain, activeChip };
+  }
+
+  picks.picks.forEach(pick => {
+    const player = playersById.get(pick.element);
+    if (!player) return;
+    const entry = {
+      ...player,
+      multiplier: pick.multiplier || 1,
+      isCaptain: Boolean(pick.is_captain),
+      isViceCaptain: Boolean(pick.is_vice_captain),
+      position: pick.position || 0
+    };
+    if (pick.position > 11) {
+      bench.push(entry);
+    } else {
+      squad.push(entry);
+    }
+    if (entry.isCaptain || entry.multiplier === 2) captain = entry;
+    if (entry.isViceCaptain) viceCaptain = entry;
+  });
+
+  return { squad, bench, captain, viceCaptain, activeChip };
+}
+
+function computeChipAdvice(remainingChips, managerSquad, predictions) {
+  const coach = [];
+  const benchPoints = managerSquad.bench.reduce((sum, player) => sum + (player.predictedPoints || 0), 0);
+  const weakPlayers = managerSquad.squad.filter(player => (player.predictedPoints || 0) < 4).length;
+  const outOfSquadCount = predictions.bestTransfers.filter(player => !managerSquad.squad.some(p => p.id === player.id)).length;
+
+  if (remainingChips.includes('3xc')) {
+    coach.push('Triple Captain is available. Consider using it when your top captain has strong fixture value and a predicted score above 15.');
+  }
+  if (remainingChips.includes('wildcard')) {
+    coach.push(weakPlayers >= 3
+      ? 'Wildcard looks useful because several squad players have low predicted points.'
+      : 'Save Wildcard for a future fixtures reset unless your squad requires a larger overhaul.'
+    );
+  }
+  if (remainingChips.includes('freehit')) {
+    coach.push(outOfSquadCount >= 4
+      ? 'Free Hit is a good option when many high predicted players are outside your current squad.'
+      : 'Keep Free Hit for a blank or double gameweek: it is best used when many regular starters are unavailable.'
+    );
+  }
+  if (remainingChips.includes('benchboost')) {
+    coach.push(benchPoints >= 11
+      ? 'Bench Boost may pay off if your bench is already strong this week.'
+      : 'Hold Bench Boost until your bench can contribute more than 10 points.'
+    );
+  }
+
+  if (!coach.length) {
+    coach.push('No chips available or no strong chip signal for the current week.');
+  }
+
+  return {
+    summary: coach.join(' '),
+    details: coach,
+    remainingChips
+  };
+}
+
+function buildManagerRecommendations(managerSquad, predictions) {
+  const currentIds = new Set([...managerSquad.squad, ...managerSquad.bench].map(player => player.id));
+  const topIds = new Set(predictions.bestTransfers.slice(0, 15).map(player => player.id));
+
+  const suggestedTransfers = predictions.bestTransfers
+    .filter(player => !currentIds.has(player.id))
+    .slice(0, 4);
+
+  const suggestedSells = managerSquad.squad
+    .filter(player => !topIds.has(player.id))
+    .slice(0, 4);
+
+  return {
+    suggestedTransfers,
+    suggestedSells,
+    captainPicks: predictions.captainPicks.slice(0, 5),
+    topCaptain: predictions.captainPicks[0] || null
   };
 }
 
@@ -224,7 +372,72 @@ export default async function handler(req, res) {
         const fixtureInfo = fixtures ? getNextFixtureForTeam(fixtures, player.team) : null;
         return normalizePlayer(player, teamMap, fixtureInfo);
       });
-      return res.status(200).json(buildPredictions(players));
+      const currentEvent = sourceData.current_event || (sourceData.events?.find(e => e.is_current)?.id) || (sourceData.events?.find(e => e.is_next)?.id) || 1;
+      const nextEvent = sourceData.events?.find(e => e.is_next === true)?.id || sourceData.events?.find(e => e.id === ((currentEvent || 0) + 1))?.id || null;
+      return res.status(200).json(buildPredictions(players, liveCache.liveMode, { currentEvent, nextEvent }));
+    }
+
+    if (req.url.startsWith('/api/manager/') && req.method === 'GET') {
+      const managerId = req.url.split('/api/manager/')[1]?.split('?')[0];
+      if (!managerId || !/^[0-9]+$/.test(managerId)) {
+        return res.status(400).json({ message: 'Invalid manager ID.' });
+      }
+
+      try {
+        const sourceData = await loadLiveData() || await loadStaticData();
+        const fixtures = await loadLiveFixtures();
+        const teamMap = buildTeamMap(sourceData);
+        const players = sourceData.elements.map(player => {
+          const fixtureInfo = fixtures ? getNextFixtureForTeam(fixtures, player.team) : null;
+          return normalizePlayer(player, teamMap, fixtureInfo);
+        });
+        const playersById = new Map(players.map(player => [player.id, player]));
+        const currentEvent = sourceData.current_event || (sourceData.events?.find(e => e.is_current)?.id) || (sourceData.events?.find(e => e.is_next)?.id) || 1;
+
+        const profileResponse = await fetch(`https://fantasy.premierleague.com/api/entry/${managerId}/`);
+        if (!profileResponse.ok) throw new Error('Unable to fetch manager profile.');
+        const profileData = await profileResponse.json();
+
+        const historyResponse = await fetch(`https://fantasy.premierleague.com/api/entry/${managerId}/history/`);
+        const historyData = historyResponse.ok ? await historyResponse.json() : null;
+        const usedChips = getManagerChipUsage(historyData);
+        const remainingChips = getRemainingChips(usedChips);
+
+        const picksResponse = await fetch(`https://fantasy.premierleague.com/api/entry/${managerId}/event/${currentEvent}/picks/`);
+        if (!picksResponse.ok) throw new Error('Unable to fetch current squad for the manager.');
+        const picksData = await picksResponse.json();
+        const managerSquad = buildManagerSquad(picksData, playersById);
+
+        const nextEvent = sourceData.events?.find(e => e.is_next === true)?.id || sourceData.events?.find(e => e.id === ((currentEvent || 0) + 1))?.id || null;
+        const predictions = buildPredictions(players, liveCache.liveMode, { currentEvent, nextEvent });
+        const managerRecommendations = buildManagerRecommendations(managerSquad, predictions);
+        const chipAdvice = computeChipAdvice(remainingChips, managerSquad, predictions);
+
+        return res.status(200).json({
+          managerProfile: {
+            id: profileData.id,
+            name: profileData.player_name || `${profileData.player_first_name || ''} ${profileData.player_last_name || ''}`.trim(),
+            player_first_name: profileData.player_first_name,
+            player_last_name: profileData.player_last_name,
+            team_name: profileData.name || profileData.team_name || '',
+            total_points: profileData.summary?.total_points || null,
+            overall_rank: profileData.summary?.overall_rank || null,
+            usedChips,
+            remainingChips
+          },
+          managerSquad,
+          managerRecommendations: {
+            ...managerRecommendations,
+            chipAdvice,
+            currentGameweek: currentEvent
+          },
+          liveMode: liveCache.liveMode,
+          source: liveCache.liveMode ? 'FPL API' : 'Local fallback data'
+        });
+      } catch (error) {
+        console.error('API /api/manager error:', error);
+        return res.status(500).json({ message: error.message || 'Unable to load manager data.' });
+      }
     }
 
     if (req.url === '/api/health' && req.method === 'GET') {
