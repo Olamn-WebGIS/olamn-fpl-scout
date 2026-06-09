@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <script>
-      if (window.location.hostname !== 'fplscout.name.ng') {
+      // ONLY redirect if the user is on the old github.io website
+      if (window.location.hostname.includes("github.io")) {
         window.location.replace("https://fplscout.name.ng" + window.location.pathname + window.location.search);
       }
     </script>
