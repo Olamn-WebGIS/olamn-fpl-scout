@@ -537,6 +537,10 @@
         // Show message helper
         function showMessage(message, type = 'error') {
             const messagesDiv = document.getElementById('messages');
+            if (!messagesDiv) {
+                console.error('Messages div not found');
+                return;
+            }
             const messageEl = document.createElement('div');
             messageEl.className = `${type}-message`;
             messageEl.innerHTML = `<strong>${type === 'error' ? 'Error' : 'Success'}:</strong> ${message}`;
@@ -545,35 +549,51 @@
             setTimeout(() => messageEl.remove(), 5000);
         }
 
-        // Load league data
-        document.getElementById('loadBtn').addEventListener('click', async () => {
-            const leagueId = document.getElementById('leagueId').value;
-            const managerId = document.getElementById('managerId').value;
-
-            if (!leagueId || !managerId) {
-                showMessage('Please enter both League ID and Manager ID', 'error');
+        // Function to setup load button
+        function setupLoadButton() {
+            const loadBtn = document.getElementById('loadBtn');
+            if (!loadBtn) {
+                console.error('Load button not found');
                 return;
             }
+            
+            loadBtn.addEventListener('click', async () => {
+                const leagueId = document.getElementById('leagueId').value;
+                const managerId = document.getElementById('managerId').value;
 
-            currentLeagueId = leagueId;
-            currentManagerId = managerId;
+                if (!leagueId || !managerId) {
+                    showMessage('Please enter both League ID and Manager ID', 'error');
+                    return;
+                }
 
-            try {
-                // Load your team info
-                await loadManagerTeam();
+                currentLeagueId = leagueId;
+                currentManagerId = managerId;
 
-                // Load league standings
-                await loadLeagueStandings();
+                try {
+                    // Load your team info
+                    await loadManagerTeam();
 
-                // Load rivals
-                await loadRivals();
+                    // Load league standings
+                    await loadLeagueStandings();
 
-                showMessage('League data loaded successfully!', 'success');
-            } catch (error) {
-                console.error('Error loading data:', error);
-                showMessage(error.message || 'Failed to load league data', 'error');
-            }
-        });
+                    // Load rivals
+                    await loadRivals();
+
+                    showMessage('League data loaded successfully!', 'success');
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                    showMessage(error.message || 'Failed to load league data', 'error');
+                }
+            });
+        }
+
+        // Setup button when page is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupLoadButton);
+        } else {
+            // If DOM is already loaded, use setTimeout to ensure button is ready
+            setTimeout(setupLoadButton, 0);
+        }
 
         // Load manager team details
         async function loadManagerTeam() {
@@ -679,68 +699,6 @@
                 console.error('Unexpected league structure in loadRivals:', league);
                 throw new Error('Unexpected league data structure');
             }
-            
-            // Get current gameweek
-            const gwResponse = await fetch(`${API_BASE}/api/current-gameweek`);
-            const gwData = await gwResponse.json();
-            const currentGW = gwData.current || 1;
-
-            let rivalsHtml = '';
-            let rivalCount = 0;
-
-            for (const entry of standings) {
-                if (entry.entry_id == currentManagerId || rivalCount >= 5) continue; // Skip self and limit to 5 rivals
-                
-                try {
-                    // Get rival's picks
-                    const picksResponse = await fetch(`${API_BASE}/api/manager/${entry.entry_id}/picks/${currentGW}`);
-                    const picks = await picksResponse.ok ? await picksResponse.json() : { picks: [] };
-
-                    // Get all players data for getting player info
-                    const playersResponse = await fetch(`${API_BASE}/api/players`);
-                    const players = await playersResponse.ok ? await playersResponse.json() : [];
-
-                    const squadHtml = renderSquad(picks.picks || [], players);
-                    
-                    rivalsHtml += `
-                        <div class="rival-card">
-                            <div class="rival-header">
-                                <div class="rival-rank">#${standings.indexOf(entry) + 1}</div>
-                                <div class="rival-info">
-                                    <h5>${entry.entry_name}</h5>
-                                    <small class="text-muted">${entry.player_name}</small>
-                                </div>
-                            </div>
-                            
-                            <div class="stat-row">
-                                <div class="stat-item">
-                                    <span class="stat-label">League Points</span>
-                                    <span class="stat-value">${entry.total}</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-label">GW Points</span>
-                                    <span class="stat-value">${entry.event_total || '-'}</span>
-                                </div>
-                            </div>
-
-                            <h6 class="mt-4 mb-3">
-                                <i class="bi bi-people"></i> Starting XI & Bench
-                            </h6>
-                            <div class="squad-grid">
-                                ${squadHtml}
-                            </div>
-                        </div>
-                    `;
-                    
-                    rivalCount++;
-                } catch (error) {
-                    console.error(`Error loading rival ${entry.entry_id}:`, error);
-                }
-            }
-
-            document.getElementById('rivalsContainer').innerHTML = rivalsHtml || '<p class="text-muted">No rivals data available</p>';
-            document.getElementById('rivalsSection').style.display = 'block';
-        }
             
             // Get current gameweek
             const gwResponse = await fetch(`${API_BASE}/api/current-gameweek`);
