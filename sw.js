@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fpl-scout-v1';
+const CACHE_NAME = 'fpl-scout-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -33,6 +33,12 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') {
+    return;
+  }
+  
+  // Don't cache CDN resources (they have their own cache headers)
+  if (event.request.url.includes('cdn.jsdelivr.net')) {
+    event.respondWith(fetch(event.request));
     return;
   }
   

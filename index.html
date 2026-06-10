@@ -177,15 +177,6 @@
             letter-spacing: 0.09em;
         }
 
-        .navbar-brand .brand-fpl {
-            color: #1b8545;
-        }
-
-        .navbar-brand .brand-scout {
-            color: #FFD700;
-            margin-left: 0.2em;
-        }
-
         .navbar-nav .nav-link {
             color: rgba(255, 255, 255, 0.78);
             transition: color 0.2s ease;
@@ -461,6 +452,28 @@
             .table th {
                 padding: 0.75rem 0.85rem;
             }
+
+            /* MailerLite Form Mobile Responsive */
+            .ml-form-embedContainer,
+            .ml-form-embedWrapper {
+                max-width: 90% !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+            }
+
+            .ml-form-embedContainer .ml-form-align-center,
+            .ml-form-embedWrapper .ml-form-align-center {
+                max-width: 100% !important;
+            }
+
+            .ml-form-field input,
+            .ml-form-field textarea {
+                font-size: 16px !important;
+            }
+
+            .ml-form-embedContainer .ml-form-form {
+                padding: 15px !important;
+            }
         }
     </style>
 </head>
@@ -506,7 +519,12 @@
 
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
         <div class="container-fluid">
-            <a class="navbar-brand" href="index.html"><img src="./images/fpl.png" alt="FPL Scout" style="height: 70px; width: auto; background: none; padding: 0;"></a>
+            <a class="navbar-brand" href="index.html">
+              <div style="line-height: 1.1; font-weight: 700; font-size: 1.5rem;">
+                <div style="color: #00E676;">FPL</div>
+                <div style="margin-left: 1.2em; font-size: 1.2rem; color: #FFD700;">Sc<span style="display: inline-block; position: relative; top: 2px;">⚽</span>ut</div>
+              </div>
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -671,7 +689,10 @@
     <div class="container">
         <div class="row">
             <div class="col-md-4 mb-3">
-                <h5>FPL Scout</h5>
+                <div style="line-height: 1.1; font-weight: 700; font-size: 1.3rem; margin-bottom: 1rem;">
+                  <div style="color: #00E676;">FPL</div>
+                  <div style="margin-left: 0.9em; font-size: 1rem; color: #FFD700;">Sc<span style="display: inline-block; position: relative; top: 2px;">⚽</span>ut</div>
+                </div>
                 <p class="small">Advanced data analytics for Fantasy Premier League managers.</p>
             </div>
             <div class="col-md-4 mb-3">

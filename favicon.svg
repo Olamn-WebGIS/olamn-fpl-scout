@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" fill="#0b2346" rx="15"/>
+  <g transform="translate(50, 50)">
+    <!-- FPL in green -->
+    <text x="-20" y="-8" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#00E676" text-anchor="middle">FPL</text>
+    <!-- Scout in yellow with football emoji -->
+    <text x="-8" y="18" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#FFD700">Sc</text>
+    <text x="8" y="18" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#FFD700">ut</text>
+    <!-- Football emoji for 'o' -->
+    <text x="2" y="16" font-size="16">⚽</text>
+  </g>
+</svg>
