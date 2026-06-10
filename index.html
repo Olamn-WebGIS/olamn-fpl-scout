@@ -397,6 +397,36 @@
         })();
     </script>
 
+    <!-- MailerLite Universal with Subscription Check -->
+    <script>
+        // Check if user has already subscribed
+        function checkSubscriptionStatus() {
+            const hasSubscribed = localStorage.getItem('mailerlite_subscribed');
+            if (!hasSubscribed) {
+                initMailerLite();
+            }
+        }
+
+        function initMailerLite() {
+            (function(w,d,e,u,f,l,n){w[f]=w[f]||function(){(w[f].q=w[f].q||[])
+            .push(arguments);},l=d.createElement(e),l.async=1,l.src=u,
+            n=d.getElementsByTagName(e)[0],n.parentNode.insertBefore(l,n);})
+            (window,document,'script','https://assets.mailerlite.com/js/universal.js','ml');
+            ml('account', '2420898');
+            
+            // Mark as subscribed when MailerLite form is submitted
+            window.addEventListener('message', function(e) {
+                if (e.data && e.data.type === 'mailerlite-form-submitted') {
+                    localStorage.setItem('mailerlite_subscribed', 'true');
+                }
+            }, false);
+        }
+
+        // Load MailerLite on page load if user hasn't subscribed
+        document.addEventListener('DOMContentLoaded', checkSubscriptionStatus);
+    </script>
+    <!-- End MailerLite Universal -->
+
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
         <div class="container-fluid">
             <a class="navbar-brand" href="index.html"><span class="brand-fpl">FPL</span> <span class="brand-scout">Scout</span></a>
@@ -579,8 +609,16 @@
                 </ul>
             </div>
         </div>
-        <div class="border-top pt-3 text-center small">
-            <p>&copy; 2026 Olamn WebGIS. All rights reserved. | Built for Fantasy Premier League Managers.</p>
+        <div class="border-top pt-3">
+            <div class="row mt-3">
+                <div class="col-md-6 text-center">
+                    <p class="small mb-2">&copy; 2026 Olamn WebGIS. All rights reserved. | Built for Fantasy Premier League Managers.</p>
+                </div>
+                <div class="col-md-6 text-center">
+                    <p class="small mb-2">📧 <a href="mailto:info@fplscout.name.ng" class="text-warning text-decoration-none">info@fplscout.name.ng</a> | <a href="mailto:olamn@fplscout.name.ng" class="text-warning text-decoration-none">olamn@fplscout.name.ng</a></p>
+                    <a href="https://x.com/OlamnFPL_scout" class="text-warning text-decoration-none me-2" title="Follow on X"><i class="bi bi-twitter"></i> X</a>
+                </div>
+            </div>
         </div>
     </div>
 </footer>
