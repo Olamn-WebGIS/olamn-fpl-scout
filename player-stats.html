@@ -61,17 +61,24 @@
                 <div style="margin-left: 1.2em; font-size: 1.2rem; color: #FFD700;">Sc<span style="display: inline-block; position: relative; top: 2px;">⚽</span>ut</div>
               </div>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="player-stats.html">Player Stats</a></li>
                     <li class="nav-item"><a class="nav-link" href="recommended.html">Recommendations</a></li>
                     <li class="nav-item"><a class="nav-link" href="mini-league.html">Mini League</a></li>
                     <li class="nav-item"><a class="nav-link" href="watchlist.html">Watchlist</a></li>
+                    <li class="nav-item ms-3">
+                        <button id="install-btn" class="btn btn-success btn-sm d-none" style="display: none !important;">
+                            <i class="bi bi-download me-1"></i> Install App
+                        </button>
+                    </li>
                 </ul>
-                <span class="badge bg-secondary ms-3" id="live-health-badge">Loading...</span>
+                <span class="badge bg-secondary ms-3 mt-2 mt-lg-0" id="live-health-badge">Loading...</span>
             </div>
         </div>
     </nav>
@@ -126,6 +133,7 @@
                     <ul class="list-unstyled small">
                         <li><a href="index.html" class="text-warning text-decoration-none">Home</a></li>
                         <li><a href="recommended.html" class="text-warning text-decoration-none">Recommendations</a></li>
+                        <li><a href="mini-league.html" class="text-warning text-decoration-none">Mini League</a></li>
                         <li><a href="watchlist.html" class="text-warning text-decoration-none">Watchlist</a></li>
                     </ul>
                 </div>
@@ -138,18 +146,19 @@
                     </ul>
                 </div>
             </div>
-        <div class="border-top pt-3">
-            <div class="row mt-3">
-                <div class="col-md-6 text-center">
-                    <p class="small mb-2">&copy; 2026 Olamn WebGIS. All rights reserved. | Built for Fantasy Premier League Managers.</p>
-                </div>
-                <div class="col-md-6 text-center">
-                    <p class="small mb-2">📧 <a href="mailto:info@fplscout.name.ng" class="text-warning text-decoration-none">info@fplscout.name.ng</a> | <a href="mailto:olamn@fplscout.name.ng" class="text-warning text-decoration-none">olamn@fplscout.name.ng</a></p>
-                    <a href="https://x.com/OlamnFPL_scout" class="text-decoration-none me-2" title="Follow on X" style="color: #000;"><i class="bi bi-twitter-x"></i></a>
+            <div class="border-top pt-3">
+                <div class="row mt-3">
+                    <div class="col-md-6 text-center">
+                        <p class="small mb-2">&copy; 2026 Olamn WebGIS. All rights reserved. | Built for Fantasy Premier League Managers.</p>
+                    </div>
+                    <div class="col-md-6 text-center">
+                        <p class="small mb-2">📧 <a href="mailto:info@fplscout.name.ng" class="text-warning text-decoration-none">info@fplscout.name.ng</a> | <a href="mailto:olamn@fplscout.name.ng" class="text-warning text-decoration-none">olamn@fplscout.name.ng</a></p>
+                        <a href="https://x.com/OlamnFPL_scout" class="text-decoration-none me-2" title="Follow on X" style="color: #000;"><i class="bi bi-twitter-x"></i></a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </footer>
 </footer>
 </body>
 </html>

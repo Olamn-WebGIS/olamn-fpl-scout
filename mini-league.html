@@ -365,26 +365,18 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="index.html">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="player-stats.html">Player Stats</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="recommended.html">Recommendations</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="mini-league.html">Mini League</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="watchlist.html">Watchlist</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="about-me.html">About</a>
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="recommended.html">Recommendations</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="mini-league.html">Mini League</a></li>
+                    <li class="nav-item"><a class="nav-link" href="watchlist.html">Watchlist</a></li>
+                    <li class="nav-item ms-3">
+                        <button id="install-btn" class="btn btn-success btn-sm d-none" style="display: none !important;">
+                            <i class="bi bi-download me-1"></i> Install App
+                        </button>
                     </li>
                 </ul>
+                <span class="badge bg-secondary ms-3 mt-2 mt-lg-0" id="live-health-badge">Loading...</span>
             </div>
         </div>
     </nav>
@@ -452,6 +444,13 @@
                                     <div class="stat-card-value" id="yourBank">-</div>
                                 </div>
                             </div>
+
+                            <h5 class="mt-5 mb-3">
+                                <i class="bi bi-people"></i> Your Squad - <span id="yourGameweekLabel">Gameweek</span>
+                            </h5>
+                            <div class="squad-grid" id="yourSquadGrid">
+                                <p class="text-muted">Loading your squad...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -487,37 +486,44 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-light border-top mt-5 py-5">
-        <div class="container-fluid">
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
             <div class="row">
-                <div class="col-md-6">
-                    <div style="line-height: 1.2; font-weight: 700; margin-bottom: 1rem;">
-                        <div style="color: #00E676; font-size: 1.3rem;">FPL</div>
-                        <div style="margin-left: 1.2em; font-size: 1rem; color: #FFD700;">Scout</div>
+                <div class="col-md-4 mb-3">
+                    <div style="line-height: 1.1; font-weight: 700; font-size: 1.3rem; margin-bottom: 1rem;">
+                      <div style="color: #00E676;">FPL</div>
+                      <div style="margin-left: 0.9em; font-size: 1rem; color: #FFD700;">Sc<span style="display: inline-block; position: relative; top: 2px;">⚽</span>ut</div>
                     </div>
-                    <p class="text-muted">Your personal FPL scout for smarter transfers and strategy.</p>
+                    <p class="small">Advanced data analytics for Fantasy Premier League managers.</p>
                 </div>
-                <div class="col-md-3">
-                    <h6 class="fw-bold mb-3">Quick Links</h6>
-                    <ul class="list-unstyled">
-                        <li><a href="index.html" class="text-decoration-none text-muted">Home</a></li>
-                        <li><a href="player-stats.html" class="text-decoration-none text-muted">Player Stats</a></li>
-                        <li><a href="recommended.html" class="text-decoration-none text-muted">Recommendations</a></li>
-                        <li><a href="watchlist.html" class="text-decoration-none text-muted">Watchlist</a></li>
+                <div class="col-md-4 mb-3">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled small">
+                        <li><a href="index.html" class="text-warning text-decoration-none">Home</a></li>
+                        <li><a href="recommended.html" class="text-warning text-decoration-none">Recommendations</a></li>
+                        <li><a href="mini-league.html" class="text-warning text-decoration-none">Mini League</a></li>
+                        <li><a href="watchlist.html" class="text-warning text-decoration-none">Watchlist</a></li>
                     </ul>
                 </div>
-                <div class="col-md-3">
-                    <h6 class="fw-bold mb-3">Legal</h6>
-                    <ul class="list-unstyled">
-                        <li><a href="about-me.html" class="text-decoration-none text-muted">About</a></li>
-                        <li><a href="privacy-policy.html" class="text-decoration-none text-muted">Privacy Policy</a></li>
-                        <li><a href="terms-of-service.html" class="text-decoration-none text-muted">Terms of Service</a></li>
+                <div class="col-md-4 mb-3">
+                    <h5>Legal</h5>
+                    <ul class="list-unstyled small">
+                        <li><a href="about-me.html" class="text-warning text-decoration-none">About Me</a></li>
+                        <li><a href="privacy-policy.html" class="text-warning text-decoration-none">Privacy Policy</a></li>
+                        <li><a href="terms-of-service.html" class="text-warning text-decoration-none">Terms of Service</a></li>
                     </ul>
                 </div>
             </div>
-            <hr class="my-4">
-            <div class="text-center text-muted">
-                <p>&copy; 2024 FPL Scout. All rights reserved. Built by Fantasy Premier League enthusiasts.</p>
+            <div class="border-top pt-3">
+                <div class="row mt-3">
+                    <div class="col-md-6 text-center">
+                        <p class="small mb-2">&copy; 2026 Olamn WebGIS. All rights reserved. | Built for Fantasy Premier League Managers.</p>
+                    </div>
+                    <div class="col-md-6 text-center">
+                        <p class="small mb-2">📧 <a href="mailto:info@fplscout.name.ng" class="text-warning text-decoration-none">info@fplscout.name.ng</a> | <a href="mailto:olamn@fplscout.name.ng" class="text-warning text-decoration-none">olamn@fplscout.name.ng</a></p>
+                        <a href="https://x.com/OlamnFPL_scout" class="text-decoration-none me-2" title="Follow on X" style="color: #000;"><i class="bi bi-twitter-x"></i></a>
+                    </div>
+                </div>
             </div>
         </div>
     </footer>
@@ -575,13 +581,39 @@
             if (!response.ok) throw new Error('Manager not found');
 
             const manager = await response.json();
-            const nameEl = document.querySelector('h1');
             
             // Display your stats
             document.getElementById('yourRank').textContent = manager.summary_overall_rank?.toLocaleString() || '-';
             document.getElementById('yourPoints').textContent = manager.summary_overall_points || '-';
             document.getElementById('yourValue').textContent = `£${(manager.team_value / 10).toFixed(1)}m` || '-';
             document.getElementById('yourBank').textContent = `£${(manager.bank / 10).toFixed(1)}m` || '-';
+
+            // Fetch current gameweek
+            const gwResponse = await fetch(`${API_BASE}/api/current-gameweek`);
+            const gwData = await gwResponse.json();
+            const currentGW = gwData.current || 1;
+            
+            document.getElementById('yourGameweekLabel').textContent = `Gameweek ${currentGW}`;
+
+            // Fetch your team's picks for current gameweek
+            try {
+                const picksResponse = await fetch(`${API_BASE}/api/manager/${currentManagerId}/picks/${currentGW}`);
+                if (picksResponse.ok) {
+                    const picks = await picksResponse.json();
+                    
+                    // Get all players data
+                    const playersResponse = await fetch(`${API_BASE}/api/players`);
+                    const players = await playersResponse.ok ? await playersResponse.json() : [];
+
+                    const squadHtml = renderSquad(picks.picks || [], players);
+                    document.getElementById('yourSquadGrid').innerHTML = squadHtml;
+                } else {
+                    document.getElementById('yourSquadGrid').innerHTML = '<p class="text-muted">Unable to load squad data</p>';
+                }
+            } catch (error) {
+                console.error('Error loading your squad:', error);
+                document.getElementById('yourSquadGrid').innerHTML = '<p class="text-muted">Error loading squad data</p>';
+            }
 
             document.getElementById('yourTeamSection').style.display = 'block';
         }
