@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Find Your Manager & League ID | FPL Scout</title>
+    <meta name="description" content="Step-by-step guide to find your FPL Manager ID and Mini League ID">
+    <meta name="theme-color" content="#0b2346">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="manifest" href="/manifest.json">
+
+    <style>
+        :root {
+            --bg: #eef4fb;
+            --surface: #ffffff;
+            --surface-soft: #f8fbff;
+            --text: #0f1f35;
+            --muted: #6f8294;
+            --primary: #0d6efd;
+            --border: rgba(15, 76, 129, 0.12);
+            --shadow: 0 18px 45px rgba(15, 76, 129, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at top left, rgba(13, 110, 253, 0.14), transparent 28%), var(--bg);
+            color: var(--text);
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            letter-spacing: 0.01em;
+        }
+
+        .navbar-custom {
+            background: linear-gradient(180deg, #0b2346 0%, #0f315f 100%);
+            padding: 0.9rem 1.25rem;
+            box-shadow: 0 10px 24px rgba(15, 76, 129, 0.16);
+        }
+
+        .navbar-brand {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .navbar-brand:hover {
+            transform: scale(1.08);
+            letter-spacing: 0.09em;
+        }
+
+        .navbar-nav .nav-link {
+            color: rgba(255, 255, 255, 0.78);
+            transition: color 0.2s ease;
+        }
+
+        .navbar-nav .nav-link:hover,
+        .navbar-nav .nav-link.active {
+            color: #ffffff !important;
+        }
+
+        .card {
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            border-radius: 24px;
+            background: var(--surface);
+            box-shadow: var(--shadow);
+            transition: all 0.25s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 55px rgba(15, 76, 129, 0.14);
+        }
+
+        .card-header,
+        .card-footer {
+            background: transparent;
+            border: none;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .btn {
+            border-radius: 999px;
+            font-weight: 600;
+            box-shadow: 0 14px 30px rgba(13, 110, 253, 0.08);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .guide-step {
+            background: linear-gradient(135deg, rgba(13, 110, 253, 0.05) 0%, rgba(13, 110, 253, 0.02) 100%);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(13, 110, 253, 0.1);
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .guide-step h3 {
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .guide-image {
+            max-width: 100%;
+            border-radius: 12px;
+            margin-top: 1rem;
+            border: 1px solid var(--border);
+        }
+
+        .url-box {
+            background: #f8fbff;
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            color: var(--primary);
+            font-weight: 600;
+            margin: 1rem 0;
+        }
+
+        .highlight {
+            background: rgba(255, 215, 0, 0.2);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #FFD700;
+        }
+
+        .text-muted {
+            color: var(--muted) !important;
+        }
+
+        @media (max-width: 767px) {
+            .guide-step {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+        }
+    </script>
+
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+              <div style="line-height: 1.1; font-weight: 700; font-size: 1.5rem;">
+                <div style="color: #00E676;">FPL</div>
+                <div style="margin-left: 1.2em; font-size: 1.2rem; color: #FFD700;">Sc<span style="display: inline-block; position: relative; top: 2px;">⚽</span>ut</div>
+              </div>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="recommended.html">Recommendations</a></li>
+                    <li class="nav-item"><a class="nav-link" href="mini-league.html">Mini League</a></li>
+                    <li class="nav-item"><a class="nav-link" href="watchlist.html">Watchlist</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container py-5">
+        <!-- Hero Section -->
+        <section class="mb-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <h1 class="display-5 fw-bold mb-3">How to Find Your IDs</h1>
+                    <p class="lead text-muted">A step-by-step guide to locate your FPL Manager ID and Mini League ID</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Manager ID Guide -->
+        <section class="mb-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="guide-step">
+                        <div class="step-number">1</div>
+                        <h3><i class="bi bi-person-circle me-2"></i>Finding Your Manager ID</h3>
+                        <p>Your Manager ID is a unique number assigned to your FPL account.</p>
+                        
+                        <h5 class="mt-4 mb-3">Steps:</h5>
+                        <ol>
+                            <li>Go to <a href="https://fantasy.premierleague.com" target="_blank" class="text-primary">fantasy.premierleague.com</a></li>
+                            <li>Log in to your FPL account</li>
+                            <li>Click on your <strong>Profile</strong> or <strong>Team</strong> tab</li>
+                            <li>Look at the URL in your browser's address bar</li>
+                        </ol>
+
+                        <div class="url-box">
+                            fantasy.premierleague.com/entry/<span class="highlight">1234567</span>/team/
+                        </div>
+
+                        <p class="mt-3">The number between <code>/entry/</code> and <code>/team/</code> is your <strong>Manager ID</strong> ✅</p>
+                        <p class="text-muted mt-3"><i class="bi bi-lightbulb"></i> In this example: <strong>1234567</strong> is the Manager ID</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- League ID Guide -->
+        <section class="mb-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="guide-step">
+                        <div class="step-number">2</div>
+                        <h3><i class="bi bi-people me-2"></i>Finding Your Mini League ID</h3>
+                        <p>Your Mini League ID can be found in your private or public league page.</p>
+                        
+                        <h5 class="mt-4 mb-3">Steps:</h5>
+                        <ol>
+                            <li>Go to <a href="https://fantasy.premierleague.com" target="_blank" class="text-primary">fantasy.premierleague.com</a></li>
+                            <li>Log in to your FPL account</li>
+                            <li>Click on <strong>Leagues</strong> in the sidebar or main menu</li>
+                            <li>Select the <strong>Mini League</strong> you want to spy on</li>
+                            <li>Look at the URL in your browser's address bar</li>
+                        </ol>
+
+                        <div class="url-box">
+                            fantasy.premierleague.com/leagues/classic/<span class="highlight">12345</span>/standings/
+                        </div>
+
+                        <p class="mt-3">The number between <code>/classic/</code> and <code>/standings/</code> is your <strong>League ID</strong> ✅</p>
+                        <p class="text-muted mt-3"><i class="bi bi-lightbulb"></i> In this example: <strong>12345</strong> is the League ID</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Summary Section -->
+        <section class="mb-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <h3 class="card-title mb-4"><i class="bi bi-check-circle-fill text-success me-2"></i>Summary</h3>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5 class="text-primary">Manager ID</h5>
+                                    <p>Found in your team profile URL</p>
+                                    <code class="d-block p-2 bg-light rounded">fantasy.premierleague.com/entry/<strong>YOUR_ID</strong>/team/</code>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5 class="text-primary">League ID</h5>
+                                    <p>Found in your league standings URL</p>
+                                    <code class="d-block p-2 bg-light rounded">fantasy.premierleague.com/leagues/classic/<strong>YOUR_ID</strong>/standings/</code>
+                                </div>
+                            </div>
+
+                            <hr class="my-4">
+                            
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Pro Tip:</strong> You can have multiple mini leagues! Each league has its own unique ID. Make sure to get the ID of the league you want to spy on.
+                            </div>
+
+                            <div class="text-center mt-4">
+                                <a href="mini-league.html" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-arrow-right me-2"></i>Go to Mini League Intelligence
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div style="line-height: 1.1; font-weight: 700; font-size: 1.3rem; margin-bottom: 1rem;">
+                      <div style="color: #00E676;">FPL</div>
+                      <div style="margin-left: 0.9em; font-size: 1rem; color: #FFD700;">Sc<span style="display: inline-block; position: relative; top: 2px;">⚽</span>ut</div>
+                    </div>
+                    <p class="small">Advanced data analytics for Fantasy Premier League managers.</p>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled small">
+                        <li><a href="index.html" class="text-warning text-decoration-none">Home</a></li>
+                        <li><a href="recommended.html" class="text-warning text-decoration-none">Recommendations</a></li>
+                        <li><a href="mini-league.html" class="text-warning text-decoration-none">Mini League</a></li>
+                        <li><a href="watchlist.html" class="text-warning text-decoration-none">Watchlist</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <h5>Legal</h5>
+                    <ul class="list-unstyled small">
+                        <li><a href="about-me.html" class="text-warning text-decoration-none">About Me</a></li>
+                        <li><a href="privacy-policy.html" class="text-warning text-decoration-none">Privacy Policy</a></li>
+                        <li><a href="terms-of-service.html" class="text-warning text-decoration-none">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-top pt-3">
+                <div class="row mt-3">
+                    <div class="col-md-6 text-center">
+                        <p class="small mb-2">&copy; 2026 Olamn WebGIS. All rights reserved. | Built for Fantasy Premier League Managers.</p>
+                    </div>
+                    <div class="col-md-6 text-center">
+                        <p class="small mb-2">📧 <a href="mailto:info@fplscout.name.ng" class="text-warning text-decoration-none">info@fplscout.name.ng</a> | <a href="mailto:olamn@fplscout.name.ng" class="text-warning text-decoration-none">olamn@fplscout.name.ng</a></p>
+                        <a href="https://x.com/OlamnFPL_scout" class="text-decoration-none me-2" title="Follow on X" style="color: #FFD700;"><i class="bi bi-twitter-x"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

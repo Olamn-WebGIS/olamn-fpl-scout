@@ -275,3 +275,65 @@ app.get('/api/teams', async (req, res) => {
     res.status(500).json({ message: 'Unable to load teams' });
   }
 });
+
+// Mini League: Fetch league standings
+app.get('/api/league/:leagueId', async (req, res) => {
+  try {
+    const leagueId = req.params.leagueId;
+    const response = await fetch(`https://fantasy.premierleague.com/api/leagues-classic/${leagueId}/standings/`);
+    if (!response.ok) {
+      return res.status(404).json({ message: 'League not found' });
+    }
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('API /api/league error:', error);
+    res.status(500).json({ message: 'Unable to load league' });
+  }
+});
+
+// Mini League: Fetch manager details
+app.get('/api/manager/:managerId', async (req, res) => {
+  try {
+    const managerId = req.params.managerId;
+    const response = await fetch(`https://fantasy.premierleague.com/api/entry/${managerId}/`);
+    if (!response.ok) {
+      return res.status(404).json({ message: 'Manager not found' });
+    }
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('API /api/manager error:', error);
+    res.status(500).json({ message: 'Unable to load manager' });
+  }
+});
+
+// Mini League: Fetch manager's squad picks for a gameweek
+app.get('/api/manager/:managerId/picks/:gameweek', async (req, res) => {
+  try {
+    const { managerId, gameweek } = req.params;
+    const response = await fetch(`https://fantasy.premierleague.com/api/entry/${managerId}/event/${gameweek}/picks/`);
+    if (!response.ok) {
+      return res.status(404).json({ message: 'Picks not found' });
+    }
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('API /api/manager picks error:', error);
+    res.status(500).json({ message: 'Unable to load picks' });
+  }
+});
+
+// Mini League: Fetch current gameweek
+app.get('/api/current-gameweek', async (req, res) => {
+  try {
+    const sourceData = await loadLiveData() || await loadStaticData();
+    const events = sourceData.events || [];
+    const current = events.find(e => e.is_current);
+    const next = events.find(e => e.is_next);
+    res.json({ current: current?.id || null, next: next?.id || null });
+  } catch (error) {
+    console.error('API /api/current-gameweek error:', error);
+    res.status(500).json({ message: 'Unable to load gameweek' });
+  }
+});
