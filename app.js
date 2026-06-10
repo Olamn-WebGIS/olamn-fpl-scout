@@ -144,26 +144,32 @@ async function fetchAndDisplayManagerSquad(managerId) {
     try {
         const squadGrid = document.getElementById('manager-squad-grid');
         if (!squadGrid) return;
-        
-        // Get current gameweek
-        const gwResponse = await fetch(`${API_BASE_URL}/api/current-gameweek`);
+
+        // Use a Proxy to avoid CORS errors
+        const proxy = "https://api.allorigins.win/get?url=";
+
+        // 1. Get current gameweek (Official FPL URL)
+        const gwResponse = await fetch(proxy + encodeURIComponent("https://fantasy.premierleague.com/api/bootstrap-static/"));
         const gwData = await gwResponse.json();
-        const currentGW = gwData.current || 1;
+        const bootstrap = JSON.parse(gwData.contents);
+        const currentGW = bootstrap.events.find(e => e.is_current).id;
+
+        // 2. Fetch manager's picks (Official FPL URL)
+        const picksUrl = `https://fantasy.premierleague.com/api/entry/${managerId}/event/${currentGW}/picks/`;
+        const picksResponse = await fetch(proxy + encodeURIComponent(picksUrl));
         
-        // Fetch manager's picks
-        const picksResponse = await fetch(`${API_BASE_URL}/api/manager/${managerId}/picks/${currentGW}`);
         if (!picksResponse.ok) {
             squadGrid.innerHTML = '<p class="text-muted small">Unable to load squad</p>';
             return;
         }
         
-        const picks = await picksResponse.json();
+        const picksData = await picksResponse.json();
+        const picks = JSON.parse(picksData.contents);
         
-        // Fetch players data
-        const playersResponse = await fetch(`${API_BASE_URL}/api/players`);
-        const players = await playersResponse.ok ? await playersResponse.json() : [];
+        // 3. Players data is already in 'bootstrap' from step 1!
+        const players = bootstrap.elements;
         
-        // Render squad
+        // ... (Keep the rest of your rendering logic exactly as it is) ...
         const positionNames = { 1: 'GKP', 2: 'DEF', 3: 'MID', 4: 'FWD' };
         const positionColors = { 1: '#FFD700', 2: '#FF6B6B', 3: '#4ECDC4', 4: '#45B7D1' };
         
