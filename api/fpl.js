@@ -1,16 +1,15 @@
-import express from 'express';
-import path from 'path';
-import fs from 'fs/promises';
-
-const app = express();
-app.use(express.json());
-app.use((req, res, next) => {
+export default async function handler(req, res) {
+  // This allows Vercel to handle the requests for you
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  if (req.method === 'OPTIONS') return res.sendStatus(200);
-  next();
-});
+  
+  // This routes your requests
+  const { managerId, gameweek } = req.query;
+  
+  if (req.url.includes('/picks/')) {
+    return await fetchPicks(managerId, gameweek, res);
+  }
+  // ... (keep your other routes here)
+}
 const PORT = process.env.PORT || 3000;
 const ROOT = process.cwd();
 const STATIC_DATA_PATH = path.join(ROOT, 'static_data.json');
@@ -337,3 +336,12 @@ app.get('/api/current-gameweek', async (req, res) => {
     res.status(500).json({ message: 'Unable to load gameweek' });
   }
 });
+async function fetchPicks(managerId, gameweek, res) {
+  try {
+    const response = await fetch(`https://fantasy.premierleague.com/api/entry/${managerId}/event/${gameweek}/picks/`);
+    const data = await response.json();
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed' });
+  }
+}

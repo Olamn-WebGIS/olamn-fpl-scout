@@ -161,7 +161,7 @@ async function fetchAndDisplayManagerSquad(managerId) {
         const players = bootstrap.elements;
         
         // 2. Fetch manager's picks
-        const picksUrl = `https://fantasy.premierleague.com/api/entry/${managerId}/event/${currentGW}/picks/`;
+        const picksResponse = await fetch(`/api/fpl?managerId=${managerId}&gameweek=${currentGW}`);
         const picksResponse = await fetch(proxy + encodeURIComponent(picksUrl));
         const picksData = await picksResponse.json();
         
