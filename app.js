@@ -135,6 +135,61 @@ function renderManagerProfile(managerData) {
     chipSummary.textContent = managerData.managerProfile.remainingChips.length
         ? `Unused chips: ${managerData.managerProfile.remainingChips.join(', ')}`
         : 'No chips remaining';
+    
+    // Fetch and display manager's squad
+    fetchAndDisplayManagerSquad(managerData.managerProfile.id || managerData.managerProfile.entry_id);
+}
+
+async function fetchAndDisplayManagerSquad(managerId) {
+    try {
+        const squadGrid = document.getElementById('manager-squad-grid');
+        if (!squadGrid) return;
+        
+        // Get current gameweek
+        const gwResponse = await fetch(`${API_BASE_URL}/api/current-gameweek`);
+        const gwData = await gwResponse.json();
+        const currentGW = gwData.current || 1;
+        
+        // Fetch manager's picks
+        const picksResponse = await fetch(`${API_BASE_URL}/api/manager/${managerId}/picks/${currentGW}`);
+        if (!picksResponse.ok) {
+            squadGrid.innerHTML = '<p class="text-muted small">Unable to load squad</p>';
+            return;
+        }
+        
+        const picks = await picksResponse.json();
+        
+        // Fetch players data
+        const playersResponse = await fetch(`${API_BASE_URL}/api/players`);
+        const players = await playersResponse.ok ? await playersResponse.json() : [];
+        
+        // Render squad
+        const positionNames = { 1: 'GKP', 2: 'DEF', 3: 'MID', 4: 'FWD' };
+        const positionColors = { 1: '#FFD700', 2: '#FF6B6B', 3: '#4ECDC4', 4: '#45B7D1' };
+        
+        const squadHtml = (picks.picks || []).map(pick => {
+            const player = players.find(p => p.id === pick.element);
+            const posName = positionNames[player?.element_type] || 'U';
+            const isBench = pick.position > 11;
+            
+            return `
+                <div class="player-card" style="opacity: ${isBench ? 0.6 : 1}; border-left: 3px solid ${positionColors[player?.element_type] || '#ccc'}; border-radius: 14px; padding: 0.75rem; text-align: center; transition: all 0.2s ease; background: var(--surface-soft, #f8fbff); border: 1px solid rgba(15, 76, 129, 0.1);">
+                    <div class="player-image" style="background-color: ${positionColors[player?.element_type] || '#f0f0f0'}; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 0.5rem; font-size: 0.85rem;">
+                        ${posName}
+                    </div>
+                    <div class="player-name" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">${player?.second_name || 'Unknown'}</div>
+                    <div class="player-position" style="font-size: 0.75rem; color: #6f8294; text-transform: uppercase; font-weight: 600;">${posName}${isBench ? ' (B)' : ''}</div>
+                    <small class="text-muted" style="font-size: 0.7rem;">${player?.team || '-'}</small>
+                </div>
+            `;
+        }).join('');
+        
+        squadGrid.innerHTML = squadHtml || '<p class="text-muted">No squad data available</p>';
+    } catch (error) {
+        console.error('Error loading manager squad:', error);
+        const squadGrid = document.getElementById('manager-squad-grid');
+        if (squadGrid) squadGrid.innerHTML = '<p class="text-muted small">Error loading squad</p>';
+    }
 }
 
 function setupManagerSyncHandlers() {

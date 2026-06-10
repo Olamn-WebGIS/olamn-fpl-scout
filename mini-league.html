@@ -551,7 +551,7 @@
             const managerId = document.getElementById('managerId').value;
 
             if (!leagueId || !managerId) {
-                showMessage('Please enter both League ID and Manager ID');
+                showMessage('Please enter both League ID and Manager ID', 'error');
                 return;
             }
 
@@ -571,7 +571,7 @@
                 showMessage('League data loaded successfully!', 'success');
             } catch (error) {
                 console.error('Error loading data:', error);
-                showMessage(error.message || 'Failed to load league data');
+                showMessage(error.message || 'Failed to load league data', 'error');
             }
         });
 
@@ -621,10 +621,28 @@
         // Load league standings
         async function loadLeagueStandings() {
             const response = await fetch(`${API_BASE}/api/league/${currentLeagueId}`);
-            if (!response.ok) throw new Error('League not found');
+            if (!response.ok) {
+                console.error('League fetch failed:', response.status);
+                throw new Error(`League not found (Status: ${response.status})`);
+            }
 
             const league = await response.json();
-            const standings = league.standings.results.slice(0, 10); // Top 10
+            console.log('League data received:', league);
+            
+            // Handle various API response structures
+            let standings = [];
+            if (league.standings && league.standings.results) {
+                standings = league.standings.results;
+            } else if (league.results) {
+                standings = league.results;
+            } else if (Array.isArray(league)) {
+                standings = league;
+            } else {
+                console.error('Unexpected league structure:', league);
+                throw new Error('Unexpected league data structure');
+            }
+            
+            standings = standings.slice(0, 10); // Top 10
             
             let html = '<table class="table table-hover"><thead><tr><th>Rank</th><th>Manager</th><th>Points</th><th>GW Points</th></tr></thead><tbody>';
             standings.forEach((entry, idx) => {
@@ -648,7 +666,81 @@
             if (!response.ok) throw new Error('League not found');
 
             const league = await response.json();
-            const standings = league.standings.results;
+            
+            // Handle various API response structures
+            let standings = [];
+            if (league.standings && league.standings.results) {
+                standings = league.standings.results;
+            } else if (league.results) {
+                standings = league.results;
+            } else if (Array.isArray(league)) {
+                standings = league;
+            } else {
+                console.error('Unexpected league structure in loadRivals:', league);
+                throw new Error('Unexpected league data structure');
+            }
+            
+            // Get current gameweek
+            const gwResponse = await fetch(`${API_BASE}/api/current-gameweek`);
+            const gwData = await gwResponse.json();
+            const currentGW = gwData.current || 1;
+
+            let rivalsHtml = '';
+            let rivalCount = 0;
+
+            for (const entry of standings) {
+                if (entry.entry_id == currentManagerId || rivalCount >= 5) continue; // Skip self and limit to 5 rivals
+                
+                try {
+                    // Get rival's picks
+                    const picksResponse = await fetch(`${API_BASE}/api/manager/${entry.entry_id}/picks/${currentGW}`);
+                    const picks = await picksResponse.ok ? await picksResponse.json() : { picks: [] };
+
+                    // Get all players data for getting player info
+                    const playersResponse = await fetch(`${API_BASE}/api/players`);
+                    const players = await playersResponse.ok ? await playersResponse.json() : [];
+
+                    const squadHtml = renderSquad(picks.picks || [], players);
+                    
+                    rivalsHtml += `
+                        <div class="rival-card">
+                            <div class="rival-header">
+                                <div class="rival-rank">#${standings.indexOf(entry) + 1}</div>
+                                <div class="rival-info">
+                                    <h5>${entry.entry_name}</h5>
+                                    <small class="text-muted">${entry.player_name}</small>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-row">
+                                <div class="stat-item">
+                                    <span class="stat-label">League Points</span>
+                                    <span class="stat-value">${entry.total}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">GW Points</span>
+                                    <span class="stat-value">${entry.event_total || '-'}</span>
+                                </div>
+                            </div>
+
+                            <h6 class="mt-4 mb-3">
+                                <i class="bi bi-people"></i> Starting XI & Bench
+                            </h6>
+                            <div class="squad-grid">
+                                ${squadHtml}
+                            </div>
+                        </div>
+                    `;
+                    
+                    rivalCount++;
+                } catch (error) {
+                    console.error(`Error loading rival ${entry.entry_id}:`, error);
+                }
+            }
+
+            document.getElementById('rivalsContainer').innerHTML = rivalsHtml || '<p class="text-muted">No rivals data available</p>';
+            document.getElementById('rivalsSection').style.display = 'block';
+        }
             
             // Get current gameweek
             const gwResponse = await fetch(`${API_BASE}/api/current-gameweek`);
@@ -720,19 +812,24 @@
             const positionColors = { 1: '#FFD700', 2: '#FF6B6B', 3: '#4ECDC4', 4: '#45B7D1' };
 
             return picks.map(pick => {
-                const player = allPlayers.find(p => p.id === pick.element);
-                const posName = positionNames[player?.element_type] || 'U';
+                // Try to find player by id or element_id
+                let player = allPlayers.find(p => p.id === pick.element);
+                if (!player) {
+                    player = allPlayers.find(p => p.element_id === pick.element);
+                }
+                
+                const posName = player?.pos || positionNames[player?.element_type] || 'U';
                 const isCaptain = pick.is_captain;
                 const isBench = pick.position > 11;
 
                 return `
-                    <div class="player-card" style="opacity: ${isBench ? 0.6 : 1}; border-left: 3px solid ${positionColors[player?.element_type] || '#ccc'};">
-                        <div class="player-image" style="background-color: ${positionColors[player?.element_type] || '#f0f0f0'}; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                    <div class="player-card" style="opacity: ${isBench ? 0.6 : 1}; border-left: 3px solid ${positionColors[player?.element_type] || '#ccc'}; border-radius: 14px; padding: 0.75rem; text-align: center; background: var(--surface-soft, #f8fbff); border: 1px solid rgba(15, 76, 129, 0.1);">
+                        <div class="player-image" style="background-color: ${positionColors[player?.element_type] || '#f0f0f0'}; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 0.5rem; font-size: 0.85rem;">
                             ${posName}
                         </div>
-                        <div class="player-name">${player?.second_name || 'Unknown'}</div>
-                        <div class="player-position">${posName}${isCaptain ? ' ⭐' : ''}${isBench ? ' (B)' : ''}</div>
-                        <small class="text-muted">${player?.team || '-'}</small>
+                        <div class="player-name" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">${player?.second_name || player?.name || 'Unknown'}</div>
+                        <div class="player-position" style="font-size: 0.75rem; color: #6f8294; text-transform: uppercase; font-weight: 600;">${posName}${isCaptain ? ' ⭐' : ''}${isBench ? ' (B)' : ''}</div>
+                        <small class="text-muted" style="font-size: 0.7rem;">${player?.team || '-'}</small>
                     </div>
                 `;
             }).join('');
@@ -746,18 +843,6 @@
             if (savedLeague && savedManager) {
                 document.getElementById('leagueId').value = savedLeague;
                 document.getElementById('managerId').value = savedManager;
-            }
-        });
-
-        // Save IDs to localStorage when loading
-        const originalLoadBtn = document.getElementById('loadBtn');
-        originalLoadBtn.addEventListener('click', () => {
-            const leagueId = document.getElementById('leagueId').value;
-            const managerId = document.getElementById('managerId').value;
-            
-            if (leagueId && managerId) {
-                localStorage.setItem('ml_leagueId', leagueId);
-                localStorage.setItem('ml_managerId', managerId);
             }
         });
     </script>
