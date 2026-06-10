@@ -145,25 +145,30 @@ async function fetchAndDisplayManagerSquad(managerId) {
         const squadGrid = document.getElementById('manager-squad-grid');
         if (!squadGrid) return;
         
-        // Use a Proxy to bypass browser security (CORS)
-        const proxyUrl = "/api/proxy?url=";
+        // FIX 1: Declare the proxy variable explicitly inside the function
+        const proxy = "https://api.allorigins.win/get?url=";
         
-        // 1. Fetch Master Data (Players & Gameweek) directly from FPL
+        // 1. Fetch Master Data
         const bootstrapUrl = "https://fantasy.premierleague.com/api/bootstrap-static/";
         const bootstrapResponse = await fetch(proxy + encodeURIComponent(bootstrapUrl));
         const bootstrapData = await bootstrapResponse.json();
+        
+        // FIX 2: Check if contents exist before parsing
+        if (!bootstrapData.contents) throw new Error("Proxy failed to return data");
         const bootstrap = JSON.parse(bootstrapData.contents);
         
         const currentGW = bootstrap.events.find(e => e.is_current).id;
         const players = bootstrap.elements;
         
-        // 2. Fetch manager's picks directly from FPL
+        // 2. Fetch manager's picks
         const picksUrl = `https://fantasy.premierleague.com/api/entry/${managerId}/event/${currentGW}/picks/`;
         const picksResponse = await fetch(proxy + encodeURIComponent(picksUrl));
         const picksData = await picksResponse.json();
+        
+        if (!picksData.contents) throw new Error("Could not fetch picks");
         const picks = JSON.parse(picksData.contents);
         
-        // 3. Render squad (rest of your existing logic)
+        // 3. Render squad
         const positionNames = { 1: 'GKP', 2: 'DEF', 3: 'MID', 4: 'FWD' };
         const positionColors = { 1: '#FFD700', 2: '#FF6B6B', 3: '#4ECDC4', 4: '#45B7D1' };
         
@@ -184,7 +189,7 @@ async function fetchAndDisplayManagerSquad(managerId) {
         
     } catch (error) {
         console.error('Error loading manager squad:', error);
-        document.getElementById('manager-squad-grid').innerHTML = '<p>Unable to load squad</p>';
+        document.getElementById('manager-squad-grid').innerHTML = '<p>Unable to load squad. Please try again later.</p>';
     }
 }
 function setupManagerSyncHandlers() {
