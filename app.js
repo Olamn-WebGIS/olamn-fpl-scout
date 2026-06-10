@@ -146,7 +146,7 @@ async function fetchAndDisplayManagerSquad(managerId) {
         if (!squadGrid) return;
         
         // Use a Proxy to bypass browser security (CORS)
-        const proxy = "https://api.allorigins.win/get?url=";
+        const proxyUrl = "/api/proxy?url=";
         
         // 1. Fetch Master Data (Players & Gameweek) directly from FPL
         const bootstrapUrl = "https://fantasy.premierleague.com/api/bootstrap-static/";
