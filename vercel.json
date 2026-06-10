@@ -6,6 +6,9 @@
     { "src": "*.html", "use": "@vercel/static" },
     { "src": "app.js", "use": "@vercel/static" },
     { "src": "*.json", "use": "@vercel/static" },
+    { "src": "*.png", "use": "@vercel/static" },
+    { "src": "*.ico", "use": "@vercel/static" },
+    { "src": "*.webmanifest", "use": "@vercel/static" },
     { "src": "images/**", "use": "@vercel/static" },
     { "src": "sw.js", "use": "@vercel/static" }
   ],
