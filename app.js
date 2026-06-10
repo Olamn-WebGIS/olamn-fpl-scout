@@ -144,32 +144,26 @@ async function fetchAndDisplayManagerSquad(managerId) {
     try {
         const squadGrid = document.getElementById('manager-squad-grid');
         if (!squadGrid) return;
-
-        // Use a Proxy to avoid CORS errors
+        
+        // Use a Proxy to bypass browser security (CORS)
         const proxy = "https://api.allorigins.win/get?url=";
-
-        // 1. Get current gameweek (Official FPL URL)
-        const gwResponse = await fetch(proxy + encodeURIComponent("https://fantasy.premierleague.com/api/bootstrap-static/"));
-        const gwData = await gwResponse.json();
-        const bootstrap = JSON.parse(gwData.contents);
+        
+        // 1. Fetch Master Data (Players & Gameweek) directly from FPL
+        const bootstrapUrl = "https://fantasy.premierleague.com/api/bootstrap-static/";
+        const bootstrapResponse = await fetch(proxy + encodeURIComponent(bootstrapUrl));
+        const bootstrapData = await bootstrapResponse.json();
+        const bootstrap = JSON.parse(bootstrapData.contents);
+        
         const currentGW = bootstrap.events.find(e => e.is_current).id;
-
-        // 2. Fetch manager's picks (Official FPL URL)
+        const players = bootstrap.elements;
+        
+        // 2. Fetch manager's picks directly from FPL
         const picksUrl = `https://fantasy.premierleague.com/api/entry/${managerId}/event/${currentGW}/picks/`;
         const picksResponse = await fetch(proxy + encodeURIComponent(picksUrl));
-        
-        if (!picksResponse.ok) {
-            squadGrid.innerHTML = '<p class="text-muted small">Unable to load squad</p>';
-            return;
-        }
-        
         const picksData = await picksResponse.json();
         const picks = JSON.parse(picksData.contents);
         
-        // 3. Players data is already in 'bootstrap' from step 1!
-        const players = bootstrap.elements;
-        
-        // ... (Keep the rest of your rendering logic exactly as it is) ...
+        // 3. Render squad (rest of your existing logic)
         const positionNames = { 1: 'GKP', 2: 'DEF', 3: 'MID', 4: 'FWD' };
         const positionColors = { 1: '#FFD700', 2: '#FF6B6B', 3: '#4ECDC4', 4: '#45B7D1' };
         
@@ -179,25 +173,20 @@ async function fetchAndDisplayManagerSquad(managerId) {
             const isBench = pick.position > 11;
             
             return `
-                <div class="player-card" style="opacity: ${isBench ? 0.6 : 1}; border-left: 3px solid ${positionColors[player?.element_type] || '#ccc'}; border-radius: 14px; padding: 0.75rem; text-align: center; transition: all 0.2s ease; background: var(--surface-soft, #f8fbff); border: 1px solid rgba(15, 76, 129, 0.1);">
-                    <div class="player-image" style="background-color: ${positionColors[player?.element_type] || '#f0f0f0'}; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 0.5rem; font-size: 0.85rem;">
-                        ${posName}
-                    </div>
-                    <div class="player-name" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">${player?.second_name || 'Unknown'}</div>
-                    <div class="player-position" style="font-size: 0.75rem; color: #6f8294; text-transform: uppercase; font-weight: 600;">${posName}${isBench ? ' (B)' : ''}</div>
-                    <small class="text-muted" style="font-size: 0.7rem;">${player?.team || '-'}</small>
+                <div class="player-card" style="opacity: ${isBench ? 0.6 : 1}; border-left: 3px solid ${positionColors[player?.element_type] || '#ccc'}; border-radius: 14px; padding: 0.75rem; text-align: center; background: #f8fbff; border: 1px solid rgba(15, 76, 129, 0.1);">
+                    <div class="player-name" style="font-size: 0.85rem; font-weight: 600;">${player?.second_name || 'Unknown'}</div>
+                    <div style="font-size: 0.75rem; color: #6f8294;">${posName}${isBench ? ' (B)' : ''}</div>
                 </div>
             `;
         }).join('');
         
-        squadGrid.innerHTML = squadHtml || '<p class="text-muted">No squad data available</p>';
+        squadGrid.innerHTML = squadHtml;
+        
     } catch (error) {
         console.error('Error loading manager squad:', error);
-        const squadGrid = document.getElementById('manager-squad-grid');
-        if (squadGrid) squadGrid.innerHTML = '<p class="text-muted small">Error loading squad</p>';
+        document.getElementById('manager-squad-grid').innerHTML = '<p>Unable to load squad</p>';
     }
 }
-
 function setupManagerSyncHandlers() {
     const input = document.getElementById('manager-id-input');
     const button = document.getElementById('manager-sync-button');
