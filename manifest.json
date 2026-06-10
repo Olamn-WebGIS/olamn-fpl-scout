@@ -1,20 +1,33 @@
 {
-  "name": "FPL Scout",
-  "short_name": "FPLScout",
+  "name": "FPL Scout - Fantasy Premier League Analytics",
+  "short_name": "FPL Scout",
+  "description": "Advanced data analytics for Fantasy Premier League managers",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "theme_color": "#0b2346",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/favicon.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/favicon.png",
       "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/favicon.png",
+      "sizes": "540x720",
       "type": "image/png"
     }
-  ]
+  ],
+  "categories": ["sports", "productivity"]
 }
