@@ -397,33 +397,13 @@
         })();
     </script>
 
-    <!-- MailerLite Universal with Subscription Check -->
+    <!-- MailerLite Universal -->
     <script>
-        // Check if user has already subscribed
-        function checkSubscriptionStatus() {
-            const hasSubscribed = localStorage.getItem('mailerlite_subscribed');
-            if (!hasSubscribed) {
-                initMailerLite();
-            }
-        }
-
-        function initMailerLite() {
-            (function(w,d,e,u,f,l,n){w[f]=w[f]||function(){(w[f].q=w[f].q||[])
-            .push(arguments);},l=d.createElement(e),l.async=1,l.src=u,
-            n=d.getElementsByTagName(e)[0],n.parentNode.insertBefore(l,n);})
-            (window,document,'script','https://assets.mailerlite.com/js/universal.js','ml');
-            ml('account', '2420898');
-            
-            // Mark as subscribed when MailerLite form is submitted
-            window.addEventListener('message', function(e) {
-                if (e.data && e.data.type === 'mailerlite-form-submitted') {
-                    localStorage.setItem('mailerlite_subscribed', 'true');
-                }
-            }, false);
-        }
-
-        // Load MailerLite on page load if user hasn't subscribed
-        document.addEventListener('DOMContentLoaded', checkSubscriptionStatus);
+        (function(w,d,e,u,f,l,n){w[f]=w[f]||function(){(w[f].q=w[f].q||[])
+        .push(arguments);},l=d.createElement(e),l.async=1,l.src=u,
+        n=d.getElementsByTagName(e)[0],n.parentNode.insertBefore(l,n);})
+        (window,document,'script','https://assets.mailerlite.com/js/universal.js','ml');
+        ml('account', '2420898');
     </script>
     <!-- End MailerLite Universal -->
 
@@ -616,7 +596,7 @@
                 </div>
                 <div class="col-md-6 text-center">
                     <p class="small mb-2">📧 <a href="mailto:info@fplscout.name.ng" class="text-warning text-decoration-none">info@fplscout.name.ng</a> | <a href="mailto:olamn@fplscout.name.ng" class="text-warning text-decoration-none">olamn@fplscout.name.ng</a></p>
-                    <a href="https://x.com/OlamnFPL_scout" class="text-warning text-decoration-none me-2" title="Follow on X"><i class="bi bi-twitter"></i> X</a>
+                    <a href="https://x.com/OlamnFPL_scout" class="text-decoration-none me-2" title="Follow on X" style="color: #000;"><i class="bi bi-twitter-x"></i></a>
                 </div>
             </div>
         </div>
