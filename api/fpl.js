@@ -345,3 +345,24 @@ async function fetchPicks(managerId, gameweek, res) {
     res.status(500).json({ error: 'Failed' });
   }
 }
+// Add this helper function to your fpl.js file
+async function getManagerPicks(managerId, gameweek) {
+    const url = `https://fantasy.premierleague.com/api/entry/${managerId}/event/${gameweek}/picks/`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Could not fetch rival data");
+    return await response.json();
+}
+
+// In your main handler, add this route:
+if (req.url.startsWith('/api/spy/')) {
+    const params = new URLSearchParams(req.url.split('?')[1]);
+    const managerId = params.get('managerId');
+    const gameweek = params.get('gameweek');
+    
+    try {
+        const picks = await getManagerPicks(managerId, gameweek);
+        return res.status(200).json(picks);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+}

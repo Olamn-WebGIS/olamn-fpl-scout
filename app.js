@@ -1049,3 +1049,15 @@ function logPlayerImageSources() {
         console.warn('logPlayerImageSources error', err);
     }
 }
+async function spyOnRival(rivalManagerId, currentGW) {
+    try {
+        const response = await fetch(`/api/spy/?managerId=${rivalManagerId}&gameweek=${currentGW}`);
+        const data = await response.json();
+        
+        console.log("Rival's team:", data.picks);
+        // From here, you can compare 'data.picks' against your own squad!
+        // e.g., check if they have the same captain or different players.
+    } catch (error) {
+        console.error("Spying failed:", error);
+    }
+}
