@@ -162,7 +162,6 @@ async function fetchAndDisplayManagerSquad(managerId) {
         
         // 2. Fetch manager's picks
         const picksResponse = await fetch(`/api/fpl?managerId=${managerId}&gameweek=${currentGW}`);
-        const picksResponse = await fetch(proxy + encodeURIComponent(picksUrl));
         const picksData = await picksResponse.json();
         
         if (!picksData.contents) throw new Error("Could not fetch picks");
